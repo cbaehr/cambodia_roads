@@ -1,0 +1,39 @@
+[
+  {
+    "name": "bulk-downloader",
+    "organization": "U.S. Geological Survey",
+    "description": "Utility for downloading completed order products from the EROS Science Processing Architecture - ESPA",
+    "version": "3.0.0",
+    "status": "Production",
+    "permissions": {
+      "usageType": "openSource",
+      "licenses": [
+        {
+          "name": "Unlicense",
+          "URL": "https://code.usgs.gov/espa/bulk-downloader/-/raw/master/LICENSE.md"
+        }
+      ]
+    },
+    "homepageURL": "https://code.usgs.gov/espa/bulk-downloader",
+    "downloadURL": "https://code.usgs.gov/espa/bulk-downloader/-/archive/master/bulk-downloader.zip",
+    "disclaimerURL": "https://code.usgs.gov/espa/bulk-downloader/raw/master/DISCLAIMER.md",
+    "repositoryURL": "https://code.usgs.gov/espa/bulk-downloader.git",
+    "vcs": "git",
+    "laborHours": 0,
+    "tags": [
+      "EROS",
+      "ESPA",
+      "LANDSAT"
+    ],
+    "languages": [
+      "Python"
+    ],
+    "contact": {
+      "name": "Clay Austin",
+      "email": "cgaustin@contractor.usgs.gov"
+    },
+    "date": {
+      "metadataLastUpdated": "2020-05-11"
+    }
+  }
+]
