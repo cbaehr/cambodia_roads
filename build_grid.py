@@ -11,6 +11,7 @@ import sys
 import rasterio
 import rioxarray as rxr
 import xarray
+from rasterstats import zonal_stats
 
 #https://gist.github.com/cbaehr/bcdec33c490ac6162f37c53fa92d3d9c - this is my zonal statistics implementation 
 #sys.path.append("/Users/christianbaehr/Github/zonal_stats")
@@ -20,10 +21,11 @@ import xarray
 
 #khm_extent = gpd.read_file(os.path.join(base_path, "sample_extent.geojson"))
 
-#empty_grid_path = os.path.join(base_path, "empty_grid_32648.geojson")
-empty_grid_path = os.path.join(base_path, "empty_grid_32648_test.geojson")
+empty_grid_path = os.path.join(base_path, "empty_grid_32648.geojson")
+#empty_grid_path = os.path.join(base_path, "empty_grid_32648_test.geojson")
 
 empty_grid = gpd.read_file(empty_grid_path)
+empty_grid["cell_area"]=empty_grid.area
 
 #keep_rows = empty_grid.geometry.intersects(khm_extent.geometry[0])
 #empty_grid = empty_grid.loc[keep_rows, :]
@@ -36,10 +38,11 @@ empty_grid = gpd.read_file(empty_grid_path)
 ### i.e. new vs. used construction, multiple construction projects nearby at once,
 ### do I really need to subset and reproduce an entire new treatment measure each time?
 
-trt_path = os.path.join(base_path, "geocoded roads/geocoded roads w import edited.geojson")
+#trt_path = os.path.join(base_path, "geocoded roads/geocoded roads w import edited.geojson")
+trt_path = os.path.join(base_path, "geocoded roads/geocoded roads w import edited 32648_MultiRingBuffer.geojson")
 trt = gpd.read_file(trt_path)
 
-trt["geometry"] = trt["geometry"].buffer(0.1)
+#trt["geometry"] = trt["geometry"].buffer(0.1)
 
 trt[["country"]] = "Cambodia"
 
@@ -48,7 +51,8 @@ trt=trt.to_crs("EPSG:32648")
 trt_dissolve = trt[["country", "geometry"]]
 trt_dissolve = trt_dissolve.dissolve(by="country")
 
-keep_rows = empty_grid.intersects(trt_dissolve.geometry[0])
+#keep_rows = empty_grid.intersects(trt_dissolve.geometry[0])
+keep_rows = empty_grid.geometry.centroid.intersects(trt_dissolve.geometry[0])
 empty_grid = empty_grid.loc[keep_rows, :]
 empty_grid.reset_index(inplace=True, drop=True)
 
@@ -58,13 +62,17 @@ grid = empty_grid.copy()
 cent = grid.geometry.centroid
 coords = [(x,y) for x, y in zip(cent.x, cent.y)]
 
+
+
 ##########
 
 #trt[["transactions_start_year", "end.date", ""]]
+empty_grid_cent = empty_grid.copy()
+empty_grid_cent["geometry"]=empty_grid_cent.geometry.centroid
 
 trt["end.date"] = pd.to_datetime(trt["end.date"], format="%m/%d/%y")
 
-trt_grid = gpd.sjoin(empty_grid, trt, op="intersects", how="left")
+trt_grid = gpd.sjoin(empty_grid_cent, trt, op="intersects", how="left")
 
 min_years = trt_grid.groupby("id")["end.date"].min()
 
@@ -74,8 +82,31 @@ keep_rows = keep_grid["end.date_x"]==keep_grid["end.date_y"]
 
 trt_grid = trt_grid.loc[keep_rows, :].reset_index(drop=True)
 
-grid = pd.concat([grid, trt_grid[["transactions_start_year", "end.date", "work.type"]]], axis=1)
+#grid = pd.concat([grid, trt_grid[["transactions_start_year", "end.date", "work.type"]]], axis=1)
+grid = pd.concat([grid, trt_grid[["transactions_start_year", "end.date", "work.type", "mrb_dist"]]], axis=1)
 grid.rename({"end.date":"end_date", "work.type":"work_type"}, axis=1, inplace=True)
+
+del empty_grid_cent, trt
+
+
+###
+
+adm_file = os.path.join(base_path, "gadm36_KHM_3.geojson")
+
+adm = gpd.read_file(adm_file)
+
+adm =adm.to_crs("EPSG:32648")
+
+empty_grid_cent = empty_grid.copy()
+empty_grid_cent.geometry=empty_grid_cent.geometry.centroid
+
+adm_grid = gpd.sjoin(empty_grid_cent, adm, op="intersects", how="left").drop_duplicates().drop(["left", "top", "right", "bottom", "index_right", "geometry"],axis=1)
+
+grid = grid.merge(adm_grid, on="id")
+
+drop_rows = grid.GID_3.isnull().values
+
+grid=grid[~drop_rows]
 
 ##########
 
@@ -89,7 +120,7 @@ landconcession.loc[lc_dum, "contract_0"] = landconcession.loc[lc_dum, "sub_decre
 
 #landconcession = landconcession.to_crs("EPSG:4326")
 
-lc_grid = gpd.sjoin(empty_grid, landconcession[["contract_0", "geometry"]], op="intersects", how="left")
+lc_grid = gpd.sjoin(grid[["id","geometry"]], landconcession[["contract_0", "geometry"]], op="intersects", how="left")
 
 min_years_lc = lc_grid.groupby("id")["contract_0"].min()
 
@@ -111,30 +142,13 @@ protectedarea["issuedate"] = pd.to_datetime(protectedarea["issuedate"], format="
 
 protectedarea = protectedarea.to_crs("EPSG:32648")
 
-pa_grid = gpd.sjoin(empty_grid, protectedarea[["issuedate", "geometry"]], op="intersects", how="left")
+pa_grid = gpd.sjoin(grid[["id","geometry"]], protectedarea[["issuedate", "geometry"]], op="intersects", how="left")
 
 min_years_pa = pa_grid.groupby("id")["issuedate"].min()
 min_years_pa.index.name = None
 
 grid = grid.merge(min_years_pa, left_on="id", right_index=True)
 
-###
-
-adm_file = os.path.join(base_path, "gadm36_KHM_3.geojson")
-
-adm = gpd.read_file(adm_file)
-
-adm =adm.to_crs("EPSG:32648")
-
-empty_grid_cent = empty_grid.copy()
-empty_grid_cent.geometry=empty_grid_cent.geometry.centroid
-
-adm_grid = gpd.sjoin(empty_grid_cent, adm, op="intersects", how="left").drop_duplicates().drop(["left", "top", "right", "bottom", "index_right", "geometry"],axis=1)
-
-grid = grid.merge(adm_grid, on="id")
-
-
-###
 
 # tree plantation data maybe not useful. Based on satellite imagery so endogenous
 
@@ -158,7 +172,7 @@ match_geotrans = match_ds.GetGeoTransform()
 wide = match_ds.RasterXSize
 high = match_ds.RasterYSize
 
-for i in range(2000, 2005):
+for i in range(2000, 2020):
 	src_file="MODIS_VCF"+str(i)+"_FINAL.tif"
 	src_filename=os.path.join(base_path, "vcf/process/final", src_file)
 	dat = rasterio.open(src_filename)
@@ -208,9 +222,53 @@ for i in range(2000, 2005):
 			colname = "vcf_"+name+"_"+stat_name+str(i)
 			grid[colname] = [x[0] for x in ras.sample(coords)]
 
+
+with rasterio.Env():
+	# Write an array as a raster band to a new 8-bit file. For
+	# the new file's profile, we start with the profile of the source
+	profile = dat.profile
+	array = dat.read(num)
+	array[mask]=200
+	# And then change the band count to 1, set the
+	# dtype to uint8, and specify LZW compression.
+	profile.update(dtype=rasterio.float32, count=1, compress='lzw')
+	with rasterio.open(temp_filename, 'w', **profile) as dst:
+		dst.write(array.astype(rasterio.float32), 1)
+
+
+
+
+
+
+src = gdal.Open(temp_filename, gdalconst.GA_ReadOnly)
+src_proj = src.GetProjection()
+src_geotrans = src.GetGeoTransform()
+
+
+stat_name = "mean"
+stat=gdalconst.GRA_Bilinear
+
+dst = gdal.GetDriverByName('GTiff').Create(dst_filename, wide, high, 1, gdalconst.GDT_Float32)
+dst.SetGeoTransform( match_geotrans )
+dst.SetProjection( match_proj)
+#gdal.ReprojectImage(src, dst, src_proj, match_proj, stat)
+gdal.ReprojectImage(src, dst, src_proj, match_proj, gdalconst.GRA_Average)
+del dst # Flush
+ras = rasterio.open(dst_filename)
+
+
+colname = "vcf_"+name+"_"+stat_name+str(i)
+grid[colname] = [x[0] for x in ras.sample(coords)]
+
+
+
+
+
 ###
 
 stats = {"mean":gdalconst.GRA_Average, "min":gdalconst.GRA_Min, "max":gdalconst.GRA_Max}
+
+geom_4326=grid.geometry.to_crs("EPSG:4326")
 
 for i in range(1999, 2021):
 	src_file = "landsatndvi_"+str(i)+".tif"
@@ -220,12 +278,14 @@ for i in range(1999, 2021):
 	# Note that I'm going to use `ds` instead of the OP's `da`
 	# replace all values equal to -9999 with np.nan
 	src_masked.astype("int16").rio.write_nodata(0).rio.to_raster(temp_filename)
+	temp = gdal.Open(temp_filename, gdalconst.GA_ReadOnly)
+	temp_proj = temp.GetProjection()
+	temp_geotrans = temp.GetGeoTransform()
+	a=zonal_stats(geom_4326, temp_filename, stats=["count"])
+	b=pd.DataFrame(a)
+	count_name="landsat_ndvi_count"+str(i)
+	grid[count_name]=b["count"]
 	for stat_name, stat in stats.items():
-		#src_file = "landsatndvi_"+str(i)+".tif"
-		#src_filename=os.path.join(base_path, "landsat", src_file)
-		temp = gdal.Open(temp_filename, gdalconst.GA_ReadOnly)
-		temp_proj = temp.GetProjection()
-		temp_geotrans = temp.GetGeoTransform()
 		dst = gdal.GetDriverByName('GTiff').Create(dst_filename, wide, high, 1, gdalconst.GDT_Float32)
 		dst.SetGeoTransform( match_geotrans )
 		dst.SetProjection( match_proj)
@@ -235,9 +295,7 @@ for i in range(1999, 2021):
 		colname = "landsat_ndvi_"+stat_name+str(i)
 		grid[colname] = [x[0] for x in ras.sample(coords)]
 
-
-
-
+#
 ###
 
 #HANSEN - zero is no loss
