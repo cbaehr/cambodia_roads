@@ -385,20 +385,13 @@ for i in range(2000, 2021):
 
 ##########
 
-
-
 #keep_rows = empty_grid.geometry.intersects(khm_extent.geometry[0])
 #empty_grid = empty_grid.loc[keep_rows, :]
 #empty_grid.reset_index(inplace=True, drop=True)
 #empty_grid.to_file("/Users/christianbaehr/Desktop/cambodia roads/data/empty_grid_test.geojson", driver="GeoJSON")
 
-
-
-
 #trt.to_file("/Users/christianbaehr/Downloads/treatment_roads.geojson", driver="GeoJSON")
 #trt_dissolve.to_file("/Users/christianbaehr/Downloads/treatment_roads_dissolve.geojson", driver="GeoJSON")
-
-
 
 ##########
 
@@ -410,6 +403,39 @@ grid.to_file(geo_out, driver="GeoJSON")
 
 csv_out=os.path.join(base_path, "cambodia_roads_grid.csv")
 grid.drop(["geometry"],axis=1).to_csv(csv_out, index=False)
+
+######
+
+geo_out=os.path.join(base_path, "cambodia_roads_grid.geojson")
+grid = gpd.read_file(geo_out)
+
+sample = grid.sample(5000)
+sample.reset_index(drop=True, inplace=True)
+sample=sample.to_crs("EPSG:4326")
+
+
+from rasterstats import zonal_stats
+
+tif_path = "/Users/christianbaehr/Desktop/cambodia roads/data/landsat/landsatndvi_2010.tif"
+
+
+src = rxr.open_rasterio(src_filename)
+src_masked=src.where(~src.isin([-10000, -9999]))
+# Note that I'm going to use `ds` instead of the OP's `da`
+# replace all values equal to -9999 with np.nan
+src_masked.astype("int16").rio.write_nodata(0).rio.to_raster(temp_filename)
+
+
+tif_list = zonal_stats(sample, tif_path)
+
+tif_df=pd.DataFrame(tif_list)
+
+sample2 = pd.concat([sample, tif_df], axis=1)
+
+sample2.to_file("/Users/christianbaehr/Downloads/test.geojson", driver="GeoJSON")
+
+
+
 
 
 
