@@ -158,6 +158,21 @@ grid = grid.merge(min_years_pa, left_on="id", right_index=True)
 
 #plantation= gpd.read_file(tp_file)
 
+###
+
+plantation_path=os.path.join(base_path, "treeplantations.geojson")
+
+plantation=gpd.read_file(plantation_path)
+plantation[["country"]] = "Cambodia"
+
+pl_dissolve = plantation[["country", "geometry"]]
+pl_dissolve=pl_dissolve.dissolve(by="country")
+
+pl_int = grid.geometry.intersects(pl_dissolve.geometry[0])
+pl_int=pl_int*1
+
+grid["plantation"]=pl_int
+
 ##########
 
 for i in range(1999, 2021):

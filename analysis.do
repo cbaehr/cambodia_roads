@@ -73,26 +73,18 @@ gen completed_road = (year>= road_completion_year)
 
 egen year_province = group(year province_id)
 
-*replace vcf_treecover_mean=. if vcf_treecover_mean==0 & vcf_treecover_max>0
-*replace vcf_nontreeveg_mean=. if vcf_nontreeveg_mean==0 & vcf_nontreeveg_max>0
-*replace vcf_nonveg_mean=. if vcf_nontreeveg_mean==0 & vcf_nonveg_max>0
-
-*replace landsat_ndvi_mean=. if landsat_ndvi_count<500
-*replace landsat_ndvi_min=. if landsat_ndvi_count<500
-*replace landsat_ndvi_max=. if landsat_ndvi_count<500
-
 gen concession = (concession_year<=year)
 gen protectedarea = (protectedarea_year<=year)
 
+drop gid_0 name_0 gid_1 name_1 nl_name_1 nl_name_2 varname_3 nl_name_3 type_3 engtype_3 cc_3 hasc_3 concession_date protectedarea_date protectedarea_date2 contract_0 issuedate date2 date3 cell_area_y
 
-
-*drop if landsat_ndvi_count<500
-*replace landsat_ndvi_mean=. if landsat_ndvi_mean==0
+***
 
 twoway (hist ndvi_mean), by(year)
+graph save "$results/ndvi_annual.png"
+*graph save MyGraph mygraphfile
 
 twoway (hist vcf_treecover_mean), by(year)
-
 twoway (hist hansen_mean), by(year)
 
 su
@@ -106,119 +98,25 @@ outreg2 using "$results/summary_statistics.doc", replace sum(log)
 
 gen temp=1
 
-reghdfe landsat_ndvi_mean completed_road, cluster(commune_id year) absorb(temp)
+reghdfe ndvi_mean completed_road, cluster(commune_id year) absorb(temp)
 outreg2 using "$results/landsat_ndvi_results.doc", replace noni nocons addtext("Climate Controls", N, "Year FEs", N, "Grid cell FEs", N, "Year*Prov. FEs", N)
 
-reghdfe landsat_ndvi_mean completed_road temperature precip, cluster(commune_id year) absorb(temp)
+reghdfe ndvi_mean completed_road temperature_mean precipitation_mean, cluster(commune_id year) absorb(temp)
 outreg2 using "$results/landsat_ndvi_results.doc", append noni nocons addtext("Climate Controls", Y, "Year FEs", N, "Grid cell FEs", N, "Year*Prov. FEs", N)
 
-reghdfe landsat_ndvi_mean completed_road temperature precip, cluster(commune_id year) absorb(year)
+reghdfe ndvi_mean completed_road temperature_mean precipitation_mean, cluster(commune_id year) absorb(year)
 outreg2 using "$results/landsat_ndvi_results.doc", append noni nocons addtext("Climate Controls", Y, "Year FEs", Y, "Grid cell FEs", N, "Year*Prov. FEs", N)
 
-reghdfe landsat_ndvi_mean completed_road temperature precip, cluster(commune_id year) absorb(year id)
+reghdfe ndvi_mean completed_road temperature_mean precipitation_mean, cluster(commune_id year) absorb(year id)
 outreg2 using "$results/landsat_ndvi_results.doc", append noni nocons addtext("Climate Controls", Y, "Year FEs", Y, "Grid cell FEs", Y, "Year*Prov. FEs", N)
 
-reghdfe landsat_ndvi_mean completed_road temperature precip, cluster(commune_id year) absorb(id year_province)
+reghdfe ndvi_mean completed_road temperature_mean precipitation_mean, cluster(commune_id year) absorb(id year_province)
 outreg2 using "$results/landsat_ndvi_results.doc", append noni nocons addtext("Climate Controls", Y, "Year FEs", N, "Grid cell FEs", Y, "Year*Prov. FEs", Y)
 
-reghdfe landsat_ndvi_mean c.completed_road##c.(concession protectedarea) temperature precip, cluster(commune_id year) absorb(id year_province)
+reghdfe ndvi_mean c.completed_road##c.(concession protectedarea) temperature_mean precipitation_mean, cluster(commune_id year) absorb(id year_province)
 outreg2 using "$results/landsat_ndvi_results.doc", append noni nocons addtext("Climate Controls", Y, "Year FEs", N, "Grid cell FEs", Y, "Year*Prov. FEs", Y)
 
 
-***
-
-
-reghdfe vcf_treecover_mean completed_road, cluster(commune_id year) absorb(temp)
-outreg2 using "$results/vcf_treecover_results.doc", replace noni nocons addtext("Climate Controls", N, "Year FEs", N, "Grid cell FEs", N, "Year*Prov. FEs", N)
-
-reghdfe vcf_treecover_mean completed_road temperature precip, cluster(commune_id year) absorb(temp)
-outreg2 using "$results/vcf_treecover_results.doc", append noni nocons addtext("Climate Controls", Y, "Year FEs", N, "Grid cell FEs", N, "Year*Prov. FEs", N)
-
-reghdfe vcf_treecover_mean completed_road temperature precip, cluster(commune_id year) absorb(year)
-outreg2 using "$results/vcf_treecover_results.doc", append noni nocons addtext("Climate Controls", Y, "Year FEs", Y, "Grid cell FEs", N, "Year*Prov. FEs", N)
-
-reghdfe vcf_treecover_mean completed_road temperature precip, cluster(commune_id year) absorb(year id)
-outreg2 using "$results/vcf_treecover_results.doc", append noni nocons addtext("Climate Controls", Y, "Year FEs", Y, "Grid cell FEs", Y, "Year*Prov. FEs", N)
-
-reghdfe vcf_treecover_mean completed_road temperature precip, cluster(commune_id year) absorb(id year_province)
-outreg2 using "$results/vcf_treecover_results.doc", append noni nocons addtext("Climate Controls", Y, "Year FEs", N, "Grid cell FEs", Y, "Year*Prov. FEs", Y)
-
-***
-
-
-
-reghdfe hansen_treecover completed_road, cluster(commune_id year) absorb(temp)
-outreg2 using "$results/hansen_treecover_results.doc", replace noni nocons addtext("Climate Controls", N, "Year FEs", N, "Grid cell FEs", N, "Year*Prov. FEs", N)
-
-reghdfe hansen_treecover completed_road temperature precip, cluster(commune_id year) absorb(temp)
-outreg2 using "$results/hansen_treecover_results.doc", append noni nocons addtext("Climate Controls", Y, "Year FEs", N, "Grid cell FEs", N, "Year*Prov. FEs", N)
-
-reghdfe hansen_treecover completed_road temperature precip, cluster(commune_id year) absorb(year)
-outreg2 using "$results/hansen_treecover_results.doc", append noni nocons addtext("Climate Controls", Y, "Year FEs", Y, "Grid cell FEs", N, "Year*Prov. FEs", N)
-
-reghdfe hansen_treecover completed_road temperature precip, cluster(commune_id year) absorb(year id)
-outreg2 using "$results/hansen_treecover_results.doc", append noni nocons addtext("Climate Controls", Y, "Year FEs", Y, "Grid cell FEs", Y, "Year*Prov. FEs", N)
-
-reghdfe hansen_treecover completed_road temperature precip, cluster(commune_id year) absorb(id year_province)
-outreg2 using "$results/hansen_treecover_results.doc", append noni nocons addtext("Climate Controls", Y, "Year FEs", N, "Grid cell FEs", Y, "Year*Prov. FEs", Y)
-
-**********
-
-gen time_to_trt1 = year*completed_road
-replace time_to_trt1=. if time_to_trt1==0
-egen time_to_trt2 = min(time_to_trt1), by(id)
-
-gen time_to_trt3 = year-time_to_trt2
-replace time_to_trt3 = time_to_trt3+30
-replace time_to_trt3 = . if time_to_trt3<22
-replace time_to_trt3 = . if time_to_trt3>38
-
-
-reghdfe landsat_ndvi_mean ib30.time_to_trt3 , absorb(id) cluster(commune_id year)
-coefplot, keep(*.time_to_trt3) yline(0) vertical omit   recast(line) color(blue) ciopts(recast(rline)  color(blue) lp(dash) ) graphregion(color(white)) bgcolor(white) xtitle("Years to road completion") ytitle("Treatment effects on NDVI") rename(22.time_to_trt3 = -8 23.time_to_trt3 = -7 24.time_to_trt3 = -6 25.time_to_trt3 = -5 26.time_to_trt3 = -4 27.time_to_trt3 = -3 28.time_to_trt3 = -2 29.time_to_trt3 = -1 30.time_to_trt3 = 0 31.time_to_trt3 = 1 32.time_to_trt3 = 2 33.time_to_trt3 = 3 34.time_to_trt3 = 4 35.time_to_trt3 = 5 36.time_to_trt3 = 6 37.time_to_trt3 = 7 38.time_to_trt3 = 8) 
-
-*saving("$results/event_study", replace)
-
-
-reghdfe vcf_treecover_mean ib30.time_to_trt3 , absorb(id) cluster(commune_id year)
-coefplot, keep(*.time_to_trt3) yline(0) vertical omit   recast(line) color(blue) ciopts(recast(rline)  color(blue) lp(dash) ) graphregion(color(white)) bgcolor(white) xtitle("Years to road completion") ytitle("Treatment effects on tree cover") rename(22.time_to_trt3 = -8 23.time_to_trt3 = -7 24.time_to_trt3 = -6 25.time_to_trt3 = -5 26.time_to_trt3 = -4 27.time_to_trt3 = -3 28.time_to_trt3 = -2 29.time_to_trt3 = -1 30.time_to_trt3 = 0 31.time_to_trt3 = 1 32.time_to_trt3 = 2 33.time_to_trt3 = 3 34.time_to_trt3 = 4 35.time_to_trt3 = 5 36.time_to_trt3 = 6 37.time_to_trt3 = 7 38.time_to_trt3 = 8) 
-
-
-
-reghdfe vcf_nontreeveg_mean ib30.time_to_trt3 , absorb(id) cluster(commune_id year)
-coefplot, keep(*.time_to_trt3) yline(0) vertical omit   recast(line) color(blue) ciopts(recast(rline)  color(blue) lp(dash) ) graphregion(color(white)) bgcolor(white) xtitle("Years to road completion") ytitle("Treatment effects on nontree vegetation") rename(22.time_to_trt3 = -8 23.time_to_trt3 = -7 24.time_to_trt3 = -6 25.time_to_trt3 = -5 26.time_to_trt3 = -4 27.time_to_trt3 = -3 28.time_to_trt3 = -2 29.time_to_trt3 = -1 30.time_to_trt3 = 0 31.time_to_trt3 = 1 32.time_to_trt3 = 2 33.time_to_trt3 = 3 34.time_to_trt3 = 4 35.time_to_trt3 = 5 36.time_to_trt3 = 6 37.time_to_trt3 = 7 38.time_to_trt3 = 8) 
-
-***
-
-
-*xtile q_ha_count = ha_count, nq(5)
-
-reghdfe landsat_ndvi_mean ibn.mrb_dist#c.completed_road, absorb(commune_id year) cluster(district_id year)
-coefplot, keep(*.mrb_dist#c.completed_road) vertical yline(0) graphregion(color(white)) legend(off) xtitle("Distance from road")
-
-
-reghdfe vcf_treecover_mean ibn.mrb_dist#c.completed_road, absorb(commune_id year) cluster(district_id year)
-coefplot, keep(*.mrb_dist#c.completed_road) vertical yline(0) graphregion(color(white)) legend(off) xtitle("Distance from road")
-
-
-reghdfe hansen_treecover ibn.mrb_dist#c.completed_road, absorb(commune_id year) cluster(district_id year)
-coefplot, keep(*.mrb_dist#c.completed_road) vertical yline(0) graphregion(color(white)) legend(off) xtitle("Distance from road")
-
-
-xtile q_baseline_landsat_ndvi_mean = baseline_landsat_ndvi_mean, nq(5)
-
-reghdfe landsat_ndvi_mean ibn.q_baseline_landsat_ndvi_mean#c.completed_road, absorb(commune_id year) cluster(district_id year)
-coefplot, keep(*.q_baseline_landsat_ndvi_mean#c.completed_road) vertical yline(0) graphregion(color(white)) legend(off) xtitle("Baseline NDVI quintile")
-
-
-
-
-local datafiles: dir "$results" files "*.txt"
-
-foreach datafile of local datafiles {
-	rm `datafile'
-	*rm `datafile'
-}
 
 
 
