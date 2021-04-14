@@ -8,7 +8,8 @@ global results "/Users/christianbaehr/Desktop/cambodia roads/results"
 *import delimited "$data/pre_panel_1km.csv", clear
 import delimited "$data/cambodia_roads_grid.csv", clear
 
-gen date2=substr(end_date, 1, 10)
+*gen date2=substr(end_date, 1, 10)
+gen date2=substr(enddate, 1, 10)
 *gen date2=end_date
 gen date3=date(date2,"YMD")
 gen road_completion_year = year(date3)
@@ -29,13 +30,15 @@ gen protectedarea_year=year(protectedarea_date2)
 
 
 forv y = 2001/2017 {
-	replace temper_`y' = ((temper_`y' -273.15) * 9/5) + 32
+	replace temperature_mean`y' = ((temperature_mean`y' -273.15) * 9/5) + 32
+	replace temperature_min`y' = ((temperature_min`y' -273.15) * 9/5) + 32
+	replace temperature_max`y' = ((temperature_max`y' -273.15) * 9/5) + 32
 }
 
 forv y = 1999/2020 {
-	replace landsat_ndvi_mean`y' =  landsat_ndvi_mean`y' * 0.0001
-	replace landsat_ndvi_min`y' =  landsat_ndvi_min`y' * 0.0001
-	replace landsat_ndvi_max`y' =  landsat_ndvi_max`y' * 0.0001
+	replace ndvi_mean`y' =  ndvi_mean`y' * 0.0001
+	replace ndvi_min`y' =  ndvi_min`y' * 0.0001
+	replace ndvi_max`y' =  ndvi_max`y' * 0.0001
 }
 
 forv y = 2000/2019 {
@@ -53,18 +56,14 @@ forv y = 2000/2019 {
 	
 }
 
-gen baseline_landsat_ndvi_mean = landsat_ndvi_mean1999
+gen baseline_ndvi_mean = ndvi_mean1999
 
-drop if hansen_treecover_2000 <0.25
+*drop if hansen_mean2000 <0.25
 
 su
 
 * drop IHAs
-reshape long vcf_treecover_mean vcf_treecover_min vcf_treecover_max vcf_nontreeveg_mean vcf_nontreeveg_min vcf_nontreeveg_max vcf_nonveg_mean vcf_nonveg_min vcf_nonveg_max landsat_ndvi_mean landsat_ndvi_min landsat_ndvi_max landsat_ndvi_count hansen_treecover_ precip_ temper_, i(id) j(year)
-
-rename hansen_treecover_ hansen_treecover
-rename temper_ temperature
-rename precip_ precip
+reshape long vcf_treecover_mean vcf_treecover_min vcf_treecover_max vcf_treecover_count vcf_nontreeveg_mean vcf_nontreeveg_min vcf_nontreeveg_max vcf_nontreeveg_count vcf_nonveg_mean vcf_nonveg_min vcf_nonveg_max vcf_nonveg_count ndvi_mean ndvi_min ndvi_max ndvi_count hansen_mean hansen_min hansen_max hansen_count precipitation_mean precipitation_min precipitation_max precipitation_count temperature_mean temperature_min temperature_max temperature_count, i(id) j(year)
 
 gen construction_year = (year>transactions_start_year & year<road_completion_year)
 
@@ -74,13 +73,13 @@ gen completed_road = (year>= road_completion_year)
 
 egen year_province = group(year province_id)
 
-replace vcf_treecover_mean=. if vcf_treecover_mean==0 & vcf_treecover_max>0
-replace vcf_nontreeveg_mean=. if vcf_nontreeveg_mean==0 & vcf_nontreeveg_max>0
-replace vcf_nonveg_mean=. if vcf_nontreeveg_mean==0 & vcf_nonveg_max>0
+*replace vcf_treecover_mean=. if vcf_treecover_mean==0 & vcf_treecover_max>0
+*replace vcf_nontreeveg_mean=. if vcf_nontreeveg_mean==0 & vcf_nontreeveg_max>0
+*replace vcf_nonveg_mean=. if vcf_nontreeveg_mean==0 & vcf_nonveg_max>0
 
-replace landsat_ndvi_mean=. if landsat_ndvi_count<500
-replace landsat_ndvi_min=. if landsat_ndvi_count<500
-replace landsat_ndvi_max=. if landsat_ndvi_count<500
+*replace landsat_ndvi_mean=. if landsat_ndvi_count<500
+*replace landsat_ndvi_min=. if landsat_ndvi_count<500
+*replace landsat_ndvi_max=. if landsat_ndvi_count<500
 
 gen concession = (concession_year<=year)
 gen protectedarea = (protectedarea_year<=year)
@@ -90,18 +89,15 @@ gen protectedarea = (protectedarea_year<=year)
 *drop if landsat_ndvi_count<500
 *replace landsat_ndvi_mean=. if landsat_ndvi_mean==0
 
-twoway (hist landsat_ndvi_mean), by(year)
+twoway (hist ndvi_mean), by(year)
 
 twoway (hist vcf_treecover_mean), by(year)
 
-twoway (hist hansen_treecover), by(year)
-
-
-
+twoway (hist hansen_mean), by(year)
 
 su
 
-corr vcf_treecover_mean vcf_nontreeveg_mean vcf_nonveg_mean hansen_treecover
+corr vcf_treecover_mean vcf_nontreeveg_mean vcf_nonveg_mean hansen_mean
 
 
 ***
