@@ -18,19 +18,11 @@ from rasterstats import zonal_stats
 
 ##########
 
-#khm_extent = gpd.read_file(os.path.join(base_path, "sample_extent.geojson"))
-
-#empty_grid_path = os.path.join(base_path, "empty_grid_32648.geojson")
 empty_grid_path = os.path.join(base_path, "empty_grid.geojson")
 #empty_grid_path = os.path.join(base_path, "empty_grid_test.geojson")
 
 empty_grid = gpd.read_file(empty_grid_path)
 empty_grid["cell_area"]=empty_grid.area
-
-#keep_rows = empty_grid.geometry.intersects(khm_extent.geometry[0])
-#empty_grid = empty_grid.loc[keep_rows, :]
-#empty_grid.reset_index(inplace=True, drop=True)
-#empty_grid.to_file("/Users/christianbaehr/Desktop/cambodia roads/data/empty_grid_test.geojson", driver="GeoJSON")
 
 ###
 
@@ -38,23 +30,15 @@ empty_grid["cell_area"]=empty_grid.area
 ### i.e. new vs. used construction, multiple construction projects nearby at once,
 ### do I really need to subset and reproduce an entire new treatment measure each time?
 
-#trt_path = os.path.join(base_path, "geocoded roads/geocoded roads w import edited.geojson")
-#trt_path = os.path.join(base_path, "geocoded roads/geocoded roads w import edited 32648_MultiRingBuffer.geojson")
 trt_path = os.path.join(base_path, "geocoded roads/geocoded roads w import edited 4326_MultiRingBuffer.geojson")
 trt = gpd.read_file(trt_path)
-#trt["geometry"] = trt["geometry"].buffer(0.1)
 trt[["country"]] = "Cambodia"
-#trt=trt.to_crs("EPSG:32648")
 trt_dissolve = trt[["country", "geometry"]]
 trt_dissolve = trt_dissolve.dissolve(by="country")
 
-#keep_rows = empty_grid.intersects(trt_dissolve.geometry[0])
 keep_rows = empty_grid.geometry.centroid.intersects(trt_dissolve.geometry[0])
 empty_grid = empty_grid.loc[keep_rows, :]
 empty_grid.reset_index(inplace=True, drop=True)
-
-empty_grid_out = os.path.join(base_path, "empty_grid_trimmed.geojson")
-empty_grid.to_file(empty_grid_out, driver="GeoJSON")
 
 ###
 
@@ -65,10 +49,10 @@ coords = [(x,y) for x, y in zip(cent.x, cent.y)]
 
 ##########
 
-#trt[["transactions_start_year", "end.date", ""]]
 empty_grid_cent = empty_grid.copy()
 empty_grid_cent["geometry"]=empty_grid_cent.geometry.centroid
 
+trt.loc[trt["end.date"]=="11/31/2016", "end.date"] = "11/30/16"
 trt["end.date"] = pd.to_datetime(trt["end.date"], format="%m/%d/%y")
 
 trt_grid = gpd.sjoin(empty_grid_cent, trt, op="intersects", how="left")
@@ -85,7 +69,7 @@ trt_grid = trt_grid.loc[keep_rows, :].reset_index(drop=True)
 trt_grid=trt_grid[~trt_grid["id"].duplicated()].reset_index(drop=True)
 
 #grid = pd.concat([grid, trt_grid[["transactions_start_year", "end.date", "work.type"]]], axis=1)
-grid = pd.concat([grid, trt_grid[["transactions_start_year", "end.date", "work.type", "mrb_dist"]]], axis=1)
+grid = pd.concat([grid, trt_grid[["project_id", "transactions_start_year", "end.date", "work.type", "confidence", "mrb_dist"]]], axis=1)
 grid.rename({"end.date":"end_date", "work.type":"work_type"}, axis=1, inplace=True)
 
 #del empty_grid_cent, trt
@@ -96,8 +80,6 @@ grid.rename({"end.date":"end_date", "work.type":"work_type"}, axis=1, inplace=Tr
 adm_file = os.path.join(base_path, "gadm36_KHM_3.geojson")
 
 adm = gpd.read_file(adm_file)
-
-#adm =adm.to_crs("EPSG:32648")
 
 empty_grid_cent = empty_grid.copy()
 empty_grid_cent.geometry=empty_grid_cent.geometry.centroid
@@ -110,12 +92,17 @@ drop_rows = grid.GID_3.isnull().values
 
 grid=grid[~drop_rows].reset_index(drop=True)
 
+###
+
+empty_grid_out = os.path.join(base_path, "empty_grid_trimmed.geojson")
+grid[['left', 'top', 'right', 'bottom', 'id', 'geometry']].to_file(empty_grid_out, driver="GeoJSON")
+
+
 ##########
 
 lc_file = os.path.join(base_path, "landconcessions.geojson")
 
 landconcession= gpd.read_file(lc_file)
-#landconcession=landconcession.to_crs("EPSG:32648")
 
 lc_dum = landconcession["contract_0"]=="Not found"
 landconcession.loc[lc_dum, "contract_0"] = landconcession.loc[lc_dum, "sub_decree"]
@@ -141,7 +128,6 @@ protectedarea.loc[protectedarea["issuedate"]=="01 Nov 1993", "issuedate"] = "01/
 protectedarea["issuedate"] = pd.to_datetime(protectedarea["issuedate"], format="%d/%m/%Y")
 
 protectedarea = protectedarea.to_crs("EPSG:4326")
-#protectedarea = protectedarea.to_crs("EPSG:32648")
 
 pa_grid = gpd.sjoin(grid[["id","geometry"]], protectedarea[["issuedate", "geometry"]], op="intersects", how="left")
 #pa_grid.index.name = None
@@ -351,45 +337,47 @@ for i in range(2000, 2021):
 	grid=pd.concat([grid, stats_df], axis=1)
 	print(str(i))
 
+###
 
+for i in [2000,2005,2010,2015,2020]:
+	file_name="gpw_density_{}.tif".format(i)
+	path_name=os.path.join(base_path, "population_density", file_name)
+	src = gdal.Open(path_name, gdalconst.GA_ReadOnly)
+	src_geotrans = src.GetGeoTransform()
+	src_proj = src.GetProjection()
+	# We want a section of source that matches this:
+	match_filename = os.path.join(base_path, "landsat/landsatndvi_2010.tif")
+	match_ds = gdal.Open(match_filename, gdalconst.GA_ReadOnly)
+	match_proj = match_ds.GetProjection()
+	match_geotrans = match_ds.GetGeoTransform()
+	wide = match_ds.RasterXSize
+	high = match_ds.RasterYSize
+	dst_filename = os.path.join(base_path, "temp2.tif")
+	dst = gdal.GetDriverByName('Gtiff').Create(dst_filename, wide, high, 1, gdalconst.GDT_Float32)
+	dst.SetGeoTransform( match_geotrans )
+	dst.SetProjection( match_proj)
+	gdal.ReprojectImage(src, dst, src_proj, match_proj, gdalconst.GRA_NearestNeighbour)
+	del dst # Flush
+	pop=rasterio.open(dst_filename)
+	affine=pop.transform
+	array=pop.read(1)
+	stats=zonal_stats(grid, array, affine=affine, nodata=-9999)
+	stats_df=pd.DataFrame(stats)
+	stats_df.columns=["population_"+str(j)+str(i) for j in stats_df.columns]
+	grid=pd.concat([grid, stats_df], axis=1)
+	print(str(i))
 
+###
 
+dst_filename=os.path.join(base_path, "distance_to_road.tif")
+roaddist=rasterio.open(dst_filename)
+affine=roaddist.transform
+array=roaddist.read(1)
+stats=zonal_stats(grid, array, affine=affine, nodata=-9999)
+stats_df=pd.DataFrame(stats)
+stats_df.columns=["distance_to_road_" + str(i) for i in stats_df.columns]
+grid=pd.concat([grid, stats_df], axis=1)
 
-#a=array.flatten()
-#b=pd.DataFrame(a)
-#b.columns=["mean"]
-
-#grid.to_file("/Users/christianbaehr/Downloads/temp.geojson", driver="GeoJSON")
-
-
-
-
-##########
-
-#cent_4326 = grid.to_crs("EPSG:4326").geometry.centroid
-#coords_4326 = [(x,y) for x, y in zip(cent_4326.x, cent_4326.y)]
-
-#for i in range(2000, 2020):
-#	precip_path = os.path.join(base_path, "cru_precip/cru_precip_{}.tif".format(i))
-#	precip = rasterio.open(precip_path, "r")
-#	grid["precip_{}".format(i)] = [x[0] for x in precip.sample(coords_4326)]
-
-#for i in range(2000, 2021):
-#	temper_path = os.path.join(base_path, "modis_lst/modislst_temp_{}.tif".format(i))
-#	temper = rasterio.open(temper_path, "r")
-#	grid["temper_{}".format(i)] = [x[0] for x in temper.sample(coords_4326)]
-
-
-
-##########
-
-#keep_rows = empty_grid.geometry.intersects(khm_extent.geometry[0])
-#empty_grid = empty_grid.loc[keep_rows, :]
-#empty_grid.reset_index(inplace=True, drop=True)
-#empty_grid.to_file("/Users/christianbaehr/Desktop/cambodia roads/data/empty_grid_test.geojson", driver="GeoJSON")
-
-#trt.to_file("/Users/christianbaehr/Downloads/treatment_roads.geojson", driver="GeoJSON")
-#trt_dissolve.to_file("/Users/christianbaehr/Downloads/treatment_roads_dissolve.geojson", driver="GeoJSON")
 
 ##########
 
