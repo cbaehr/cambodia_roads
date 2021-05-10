@@ -387,8 +387,11 @@ grid.drop(["left", "top", "right", "bottom"], axis=1, inplace=True)
 geo_out=os.path.join(base_path, "cambodia_roads_grid.geojson")
 grid.to_file(geo_out, driver="GeoJSON")
 
+
+
 csv_out=os.path.join(base_path, "cambodia_roads_grid.csv")
 grid.drop(["geometry"],axis=1).to_csv(csv_out, index=False)
+
 
 ######
 

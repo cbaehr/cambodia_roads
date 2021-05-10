@@ -4,7 +4,7 @@
 global data "/Users/christianbaehr/Desktop/cambodia roads/data"
 global results "/Users/christianbaehr/Box Sync/cambodia_roads/results"
 
-import delimited "$data/cambodia_roads_grid.csv", clear
+import delimited "$data/cambodia_roads_grid.csv", clear varnames(1)
 
 gen date2=substr(end_date, 1, 10)
 *gen date2=end_date
@@ -30,11 +30,11 @@ gen concession_dummy= (!missing(concession_year))
 gen protectedarea_dummy=(!missing(protectedarea_year))
 rename plantation plantation_dummy
 
-gen baseline_ndvi_mean = ndvi_mean2000
+gen baseline_ndvi_mean = ndvi_mean2000*0.0001
 
 gen baseline_hansen_mean=hansen_mean2000
 
-gen baseline_vcftreecover_mean=vcf_treecover_mean2000
+gen baseline_vcftreecover_mean=vcf_treecover_mean2000*0.01
 
 gen baseline_population_mean=population_mean2000
 
