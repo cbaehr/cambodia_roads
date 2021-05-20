@@ -4,6 +4,13 @@
 global data "/Users/christianbaehr/Desktop/cambodia roads/data"
 global results "/Users/christianbaehr/Box Sync/cambodia_roads/results"
 
+*ssc install grstyle
+*scheme s2color
+grstyle init
+grstyle color background white // set overall background to white
+*grstyle set color black*.04: plotregion color //set plot area background
+
+
 import delimited "$data/cambodia_roads_grid.csv", clear varnames(1)
 
 gen date2=substr(end_date, 1, 10)
@@ -123,6 +130,19 @@ gen cond3 = (baseline_hansen_mean>=0.10 & vcf_treecover_pchange<500 & !missing(v
 
 gen cond4 = (baseline_hansen_mean>=0.10 & vcf_treecover_pchange<=200 & !missing(vcf_treecover_pchange))
 
+
+gen time_to_treatment = (year - road_completion_year) - 1
+replace time_to_treatment=time_to_treatment+30
+replace time_to_treatment=39 if time_to_treatment>=39 & !missing(time_to_treatment)
+replace time_to_treatment=21 if time_to_treatment<=21 & !missing(time_to_treatment)
+
+
+egen median_baseline_hansen = median(baseline_hansen_mean)
+
+gen baseline_dum = (baseline_hansen_mean > median_baseline_hansen)
+replace baseline_dum = . if missing(baseline_hansen_mean)
+
+
 gen temp=1
 
 
@@ -225,11 +245,6 @@ outreg2 using "$results/mainmodels_VCFtreecover.doc", append noni nocons addtext
 rm "$results/mainmodels_VCFtreecover.txt"
 
 ********************************************************************************
-
-gen time_to_treatment = (year - road_completion_year) - 1
-replace time_to_treatment=time_to_treatment+30
-replace time_to_treatment=39 if time_to_treatment>=39 & !missing(time_to_treatment)
-replace time_to_treatment=21 if time_to_treatment<=21 & !missing(time_to_treatment)
 
 *gen temp1 = (time_to_treatment<=39 & time_to_treatment>=21)
 *replace temp1=. if missing(time_to_treatment)
@@ -582,23 +597,241 @@ restore
 
 rm "$results/temp.csv"
 
+********************************************************************************
+
+***
+
+reghdfe ndvi_mean ibn.dist_from_treatment#c.completed_road if (cond1 & baseline_dum), absorb(year id) cluster(project_id year)
+est sto hs1
+reghdfe ndvi_mean ibn.dist_from_treatment#c.completed_road if (cond1 & !baseline_dum), absorb(year id) cluster(project_id year)
+est sto hs2
+
+coefplot hs1, bylabel(More forested) || hs2, bylabel(Less forested) ||, keep(*.dist_from_treatment#c.completed_road) vertical yline(0) rename(1.dist_from_treatment#c.completed_road=1 2.dist_from_treatment#c.completed_road=2 3.dist_from_treatment#c.completed_road=3 4.dist_from_treatment#c.completed_road=4 5.dist_from_treatment#c.completed_road=5 6.dist_from_treatment#c.completed_road=6 7.dist_from_treatment#c.completed_road=7 8.dist_from_treatment#c.completed_road=8 9.dist_from_treatment#c.completed_road=9 10.dist_from_treatment#c.completed_road=10) graphregion(color(white)) bgcolor(white) xtitle("Distance from treatment road (km)") ytitle("Effect on NDVI") saving("$results/distance_ndvi_bymedian", replace)
+*title("NDVI TE by dist. from treatment road") 
+*subtitle(, color(white))
 
 
+reghdfe hansen_mean ibn.dist_from_treatment#c.completed_road if (cond1 & baseline_dum), absorb(year id) cluster(project_id year)
+est sto hs3
+reghdfe hansen_mean ibn.dist_from_treatment#c.completed_road if (cond1 & !baseline_dum), absorb(year id) cluster(project_id year)
+est sto hs4
+
+coefplot hs3, bylabel(More forested) || hs4, bylabel(Less forested) ||, keep(*.dist_from_treatment#c.completed_road) vertical yline(0) rename(1.dist_from_treatment#c.completed_road=1 2.dist_from_treatment#c.completed_road=2 3.dist_from_treatment#c.completed_road=3 4.dist_from_treatment#c.completed_road=4 5.dist_from_treatment#c.completed_road=5 6.dist_from_treatment#c.completed_road=6 7.dist_from_treatment#c.completed_road=7 8.dist_from_treatment#c.completed_road=8 9.dist_from_treatment#c.completed_road=9 10.dist_from_treatment#c.completed_road=10) graphregion(color(white)) bgcolor(white) xtitle("Distance from treatment road (km)") ytitle("Effect on (Hansen) tree cover") saving("$results/distance_hansen_bymedian", replace)
+*title("Hansen tree cover TE by dist. from treatment road")
 
 
+reghdfe vcf_treecover_mean ibn.dist_from_treatment#c.completed_road if (cond1 & baseline_dum), absorb(year id) cluster(project_id year)
+est sto hs5
+reghdfe vcf_treecover_mean ibn.dist_from_treatment#c.completed_road if (cond1 & !baseline_dum), absorb(year id) cluster(project_id year)
+est sto hs6
+
+coefplot hs5, bylabel(More forested) || hs6, bylabel(Less forested) ||, keep(*.dist_from_treatment#c.completed_road) vertical yline(0) rename(1.dist_from_treatment#c.completed_road=1 2.dist_from_treatment#c.completed_road=2 3.dist_from_treatment#c.completed_road=3 4.dist_from_treatment#c.completed_road=4 5.dist_from_treatment#c.completed_road=5 6.dist_from_treatment#c.completed_road=6 7.dist_from_treatment#c.completed_road=7 8.dist_from_treatment#c.completed_road=8 9.dist_from_treatment#c.completed_road=9 10.dist_from_treatment#c.completed_road=10) graphregion(color(white)) bgcolor(white) xtitle("Distance from treatment road (km)") ytitle("Effect on VCF tree cover %") saving("$results/distance_VCFtreecover_bymedian", replace)
+*title("VCF tree cover TE by dist. from treatment road") 
 
 
+reghdfe vcf_nontreeveg_mean ibn.dist_from_treatment#c.completed_road if (cond1 & baseline_dum), absorb(year id) cluster(project_id year)
+est sto hs7
+reghdfe vcf_nontreeveg_mean ibn.dist_from_treatment#c.completed_road if (cond1 & !baseline_dum), absorb(year id) cluster(project_id year)
+est sto hs8
+
+coefplot hs7, bylabel(More forested) || hs8, bylabel(Less forested) ||, keep(*.dist_from_treatment#c.completed_road) vertical yline(0) rename(1.dist_from_treatment#c.completed_road=1 2.dist_from_treatment#c.completed_road=2 3.dist_from_treatment#c.completed_road=3 4.dist_from_treatment#c.completed_road=4 5.dist_from_treatment#c.completed_road=5 6.dist_from_treatment#c.completed_road=6 7.dist_from_treatment#c.completed_road=7 8.dist_from_treatment#c.completed_road=8 9.dist_from_treatment#c.completed_road=9 10.dist_from_treatment#c.completed_road=10) graphregion(color(white)) bgcolor(white) xtitle("Distance from treatment road (km)") ytitle("Effect on VCF non-tree vegetation %") saving("$results/distance_VCFnontreeveg_bymedian", replace)
+*title("VCF non-tree veg. TE by dist. from treatment road")
 
 
+reghdfe vcf_nonveg_mean ibn.dist_from_treatment#c.completed_road if (cond1 & baseline_dum), absorb(year id) cluster(project_id year)
+est sto hs9
+reghdfe vcf_nonveg_mean ibn.dist_from_treatment#c.completed_road if (cond1 & !baseline_dum), absorb(year id) cluster(project_id year)
+est sto hs10
+
+coefplot hs9, bylabel(More forested) || hs10, bylabel(Less forested) ||, keep(*.dist_from_treatment#c.completed_road) vertical yline(0) rename(1.dist_from_treatment#c.completed_road=1 2.dist_from_treatment#c.completed_road=2 3.dist_from_treatment#c.completed_road=3 4.dist_from_treatment#c.completed_road=4 5.dist_from_treatment#c.completed_road=5 6.dist_from_treatment#c.completed_road=6 7.dist_from_treatment#c.completed_road=7 8.dist_from_treatment#c.completed_road=8 9.dist_from_treatment#c.completed_road=9 10.dist_from_treatment#c.completed_road=10) graphregion(color(white)) bgcolor(white) xtitle("Distance from treatment road (km)") ytitle("Effect on VCF non-vegetated %") saving("$results/distance_VCFnonveg_bymedian", replace)
+*title("VCF non-vegetated TE by dist. from treatment road")
 
 
+reghdfe hansen_mean ibn.dist_from_treatment#c.completed_road if (cond1 & work_type=="new" & baseline_dum), absorb(year id) cluster(project_id year)
+est sto hs11
+reghdfe hansen_mean ibn.dist_from_treatment#c.completed_road if (cond1 & work_type=="new" & !baseline_dum), absorb(year id) cluster(project_id year)
+est sto hs12
+
+coefplot hs11, bylabel(More forested) || hs12, bylabel(Less forested) ||, keep(*.dist_from_treatment#c.completed_road) vertical yline(0) rename(1.dist_from_treatment#c.completed_road=1 2.dist_from_treatment#c.completed_road=2 3.dist_from_treatment#c.completed_road=3 4.dist_from_treatment#c.completed_road=4 5.dist_from_treatment#c.completed_road=5 6.dist_from_treatment#c.completed_road=6 7.dist_from_treatment#c.completed_road=7 8.dist_from_treatment#c.completed_road=8 9.dist_from_treatment#c.completed_road=9 10.dist_from_treatment#c.completed_road=10) graphregion(color(white)) bgcolor(white) xtitle("Distance from treatment road (km)") ytitle("Effect on (Hansen) tree cover") saving("$results/distance_hansen_bymedian_NEWonly", replace)
+*title("Hansen tree cover TE by dist. from treatment road")
 
 
+reghdfe vcf_treecover_mean ibn.dist_from_treatment#c.completed_road if (cond1 & work_type=="new" & baseline_dum), absorb(year id) cluster(project_id year)
+est sto hs13
+reghdfe vcf_treecover_mean ibn.dist_from_treatment#c.completed_road if (cond1 & work_type=="new" & !baseline_dum), absorb(year id) cluster(project_id year)
+est sto hs14
+
+coefplot hs13, bylabel(More forested) || hs14, bylabel(Less forested) ||, keep(*.dist_from_treatment#c.completed_road) vertical yline(0) rename(1.dist_from_treatment#c.completed_road=1 2.dist_from_treatment#c.completed_road=2 3.dist_from_treatment#c.completed_road=3 4.dist_from_treatment#c.completed_road=4 5.dist_from_treatment#c.completed_road=5 6.dist_from_treatment#c.completed_road=6 7.dist_from_treatment#c.completed_road=7 8.dist_from_treatment#c.completed_road=8 9.dist_from_treatment#c.completed_road=9 10.dist_from_treatment#c.completed_road=10) graphregion(color(white)) bgcolor(white) xtitle("Distance from treatment road (km)") ytitle("Effect on VCF tree cover %") saving("$results/distance_VCFtreecover_bymedian_NEWonly", replace)
+*title("VCF tree cover TE by dist. from treatment road")
+
+********************************************************************************
+
+reghdfe ndvi_mean ib30.time_to_treatment i.year if (cond1 & baseline_dum), cluster(project_id year) absorb(id )
+est sto ts1
+esttab ts1 using "$data/temp1.csv", replace plain wide noobs cells((b ci_l ci_u))
+
+reghdfe ndvi_mean ib30.time_to_treatment i.year if (cond1 & !baseline_dum), cluster(project_id year) absorb(id )
+est sto ts2
+esttab ts2 using "$data/temp2.csv", replace plain wide noobs cells((b ci_l ci_u))
 
 
+preserve
+
+import delimited "$data/temp1.csv", clear varnames(2)
+gen a =substr(v1, 4, 19)
+keep if a=="time_to_treatment"
+gen c=substr(v1, 1, 2)
+destring c, replace
+keep if c>=22 & c<=38
+expand 2 if _n==1
+replace v1="30.time_to_treatment" if _n==_N
+replace b=0 if _n==_N
+sum min95 if v1=="29.time_to_treatment" | v1=="31.time_to_treatment"
+replace min95 = r(mean) if _n==_N
+sum max95 if v1=="29.time_to_treatment" | v1=="31.time_to_treatment"
+replace max95 = r(mean) if _n==_N
+sort v1
+gen v2 = _n - 9
+rename * =_1
+gen id = _n
+save "$data/temp1", replace
+
+import delimited "$data/temp2.csv", clear varnames(2)
+gen a =substr(v1, 4, 19)
+keep if a=="time_to_treatment"
+gen c=substr(v1, 1, 2)
+destring c, replace
+keep if c>=22 & c<=38
+expand 2 if _n==1
+replace v1="30.time_to_treatment" if _n==_N
+replace b=0 if _n==_N
+sum min95 if v1=="29.time_to_treatment" | v1=="31.time_to_treatment"
+replace min95 = r(mean) if _n==_N
+sum max95 if v1=="29.time_to_treatment" | v1=="31.time_to_treatment"
+replace max95 = r(mean) if _n==_N
+sort v1
+gen v2 = _n - 9
+rename * =_2
+gen id = _n
+
+merge 1:1 id using "$data/temp1"
+
+twoway (line b_1 v2_1) (line min95_1 v2_1, lpattern(dash) lcolor(navy)) (line max95_1 v2_1, lpattern(dash) lcolor(navy)) (line b_2 v2_2) (line min95_2 v2_2, lpattern(dash) lcolor(orange)) (line max95_2 v2_2, lpattern(dash) lcolor(orange)), graphregion(color(white)) bgcolor(white) xlab(-8(1)8) xline(-4 0) text(-0.1 -4 "Construction start" -0.1 0 "Road completion", size(vsmall) placement(east) color(cranberry)) title("Event study - NDVI") xtitle("Time to road completion") ytitle("Treatment effects on NDVI") legend(order(1 "More forested" 4 "Less forested")) saving("$results/eventstudy_ndvi_bymedian", replace)
+
+restore
+
+***
+
+reghdfe hansen_mean ib30.time_to_treatment i.year if (cond1 & baseline_dum), cluster(project_id year) absorb(id )
+est sto ts1
+esttab ts1 using "$data/temp1.csv", replace plain wide noobs cells((b ci_l ci_u))
+
+reghdfe hansen_mean ib30.time_to_treatment i.year if (cond1 & !baseline_dum), cluster(project_id year) absorb(id )
+est sto ts2
+esttab ts2 using "$data/temp2.csv", replace plain wide noobs cells((b ci_l ci_u))
 
 
+preserve
 
+import delimited "$data/temp1.csv", clear varnames(2)
+gen a =substr(v1, 4, 19)
+keep if a=="time_to_treatment"
+gen c=substr(v1, 1, 2)
+destring c, replace
+keep if c>=22 & c<=38
+expand 2 if _n==1
+replace v1="30.time_to_treatment" if _n==_N
+replace b=0 if _n==_N
+sum min95 if v1=="29.time_to_treatment" | v1=="31.time_to_treatment"
+replace min95 = r(mean) if _n==_N
+sum max95 if v1=="29.time_to_treatment" | v1=="31.time_to_treatment"
+replace max95 = r(mean) if _n==_N
+sort v1
+gen v2 = _n - 9
+rename * =_1
+gen id = _n
+save "$data/temp1", replace
+
+import delimited "$data/temp2.csv", clear varnames(2)
+gen a =substr(v1, 4, 19)
+keep if a=="time_to_treatment"
+gen c=substr(v1, 1, 2)
+destring c, replace
+keep if c>=22 & c<=38
+expand 2 if _n==1
+replace v1="30.time_to_treatment" if _n==_N
+replace b=0 if _n==_N
+sum min95 if v1=="29.time_to_treatment" | v1=="31.time_to_treatment"
+replace min95 = r(mean) if _n==_N
+sum max95 if v1=="29.time_to_treatment" | v1=="31.time_to_treatment"
+replace max95 = r(mean) if _n==_N
+sort v1
+gen v2 = _n - 9
+rename * =_2
+gen id = _n
+
+merge 1:1 id using "$data/temp1"
+
+twoway (line b_1 v2_1) (line min95_1 v2_1, lpattern(dash) lcolor(navy)) (line max95_1 v2_1, lpattern(dash) lcolor(navy)) (line b_2 v2_2) (line min95_2 v2_2, lpattern(dash) lcolor(orange)) (line max95_2 v2_2, lpattern(dash) lcolor(orange)), graphregion(color(white)) bgcolor(white) xlab(-8(1)8) xline(-4 0) text(-0.1 -4 "Construction start" -0.1 0 "Road completion", size(vsmall) placement(east) color(cranberry)) title("Event study - Hansen TC") xtitle("Time to road completion") ytitle("Treatment effects on tree cover") legend(order(1 "More forested" 4 "Less forested")) saving("$results/eventstudy_hansen_bymedian", replace)
+
+restore
+
+
+***
+
+reghdfe vcf_treecover_mean ib30.time_to_treatment i.year if (cond1 & baseline_dum), cluster(project_id year) absorb(id )
+est sto ts1
+esttab ts1 using "$data/temp1.csv", replace plain wide noobs cells((b ci_l ci_u))
+
+reghdfe vcf_treecover_mean ib30.time_to_treatment i.year if (cond1 & !baseline_dum), cluster(project_id year) absorb(id )
+est sto ts2
+esttab ts2 using "$data/temp2.csv", replace plain wide noobs cells((b ci_l ci_u))
+
+
+preserve
+
+import delimited "$data/temp1.csv", clear varnames(2)
+gen a =substr(v1, 4, 19)
+keep if a=="time_to_treatment"
+gen c=substr(v1, 1, 2)
+destring c, replace
+keep if c>=22 & c<=38
+expand 2 if _n==1
+replace v1="30.time_to_treatment" if _n==_N
+replace b=0 if _n==_N
+sum min95 if v1=="29.time_to_treatment" | v1=="31.time_to_treatment"
+replace min95 = r(mean) if _n==_N
+sum max95 if v1=="29.time_to_treatment" | v1=="31.time_to_treatment"
+replace max95 = r(mean) if _n==_N
+sort v1
+gen v2 = _n - 9
+rename * =_1
+gen id = _n
+save "$data/temp1", replace
+
+import delimited "$data/temp2.csv", clear varnames(2)
+gen a =substr(v1, 4, 19)
+keep if a=="time_to_treatment"
+gen c=substr(v1, 1, 2)
+destring c, replace
+keep if c>=22 & c<=38
+expand 2 if _n==1
+replace v1="30.time_to_treatment" if _n==_N
+replace b=0 if _n==_N
+sum min95 if v1=="29.time_to_treatment" | v1=="31.time_to_treatment"
+replace min95 = r(mean) if _n==_N
+sum max95 if v1=="29.time_to_treatment" | v1=="31.time_to_treatment"
+replace max95 = r(mean) if _n==_N
+sort v1
+gen v2 = _n - 9
+rename * =_2
+gen id = _n
+
+merge 1:1 id using "$data/temp1"
+
+twoway (line b_1 v2_1) (line min95_1 v2_1, lpattern(dash) lcolor(navy)) (line max95_1 v2_1, lpattern(dash) lcolor(navy)) (line b_2 v2_2) (line min95_2 v2_2, lpattern(dash) lcolor(orange)) (line max95_2 v2_2, lpattern(dash) lcolor(orange)), graphregion(color(white)) bgcolor(white) xlab(-8(1)8) xline(-4 0) text(-0.1 -4 "Construction start" -0.1 0 "Road completion", size(vsmall) placement(east) color(cranberry)) title("Event study - VCF TC") xtitle("Time to road completion") ytitle("Treatment effects on tree cover") legend(order(1 "More forested" 4 "Less forested")) saving("$results/eventstudy_VCFtreecover_bymedian", replace)
+
+restore
 
 
 
