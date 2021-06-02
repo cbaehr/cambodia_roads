@@ -18,7 +18,10 @@ network_path=os.path.join(base, "market_access/cambodia_highway_trimmed_withnewr
 network=gpd.read_file(network_path)
 network.loc[np.isnan(network.speed_limit), "speed_limit"] = 0
 
-for i in [2005, 2010, 2015, 2020]:
+
+
+
+for i in [2010, 2015, 2020]:
 	print(i)
 	gcdroads_dum=gcdroads["year"] > i
 	gcdroads_i = gcdroads.loc[gcdroads_dum, ]
@@ -28,18 +31,24 @@ for i in [2005, 2010, 2015, 2020]:
 		prep_gcdroads_buf=prep(gcdroads_buf)
 		roads_dum=[prep_gcdroads_buf.intersects(i) for i in network.geometry]
 		network_i.loc[roads_dum, "speed_limit"] = 50
-	gcdroads_i_finished=gcdroads.loc[~gcdroads_dum, "geometry"]
-	for j in gcdroads_i_finished:
-		network_add=network.iloc[1]
-		network_add["geometry"]=j
-		network_add["speed_limit"]=100
-		network_i.loc[len(network_i.index)]=network_add
+	###
+	network_i.loc[network_i["TYPE"].isnull(), "speed_limit"]=20
+	gcdroads_i_finished=gcdroads.loc[~gcdroads_dum,]
+	gcdroads_finished_buf=gpd.GeoDataFrame(gcdroads_i_finished, geometry=gcdroads_i_finished.buffer(50)).dissolve(by="country")["geometry"][0]
+	prep_gcdroads_finished_buf=prep(gcdroads_finished_buf)
+	finished_roads_dum=[prep_gcdroads_finished_buf.intersects(i) for i in network.geometry]
+	network_i.loc[finished_roads_dum, "speed_limit"]=100
+	#for j in gcdroads_i_finished:
+	#	network_add=network.iloc[1]
+	#	network_add["geometry"]=j
+	#	network_add["speed_limit"]=100
+	#	network_i.loc[len(network_i.index)]=network_add
 	network_out=os.path.join(base, "market_access/road_network_{}_32648.geojson".format(str(i)))
 	network_i.set_crs("EPSG:32648").to_file(network_out, driver="GeoJSON")
 
 ###
 
-chunks=10
+chunks=5
 
 grid_path = os.path.join(base, "empty_grid_trimmed_points_32648.geojson")
 grid=gpd.read_file(grid_path)

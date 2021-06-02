@@ -378,19 +378,49 @@ stats_df=pd.DataFrame(stats)
 stats_df.columns=["distance_to_road_" + str(i) for i in stats_df.columns]
 grid=pd.concat([grid, stats_df], axis=1)
 
+###
+
+ma10_path=os.path.join(base_path, "market_access/market_access_2010_merged.geojson")
+ma10=gpd.read_file(ma10_path)
+
+ma15_path=os.path.join(base_path, "market_access/market_access_2015_merged.geojson")
+ma15=gpd.read_file(ma15_path)
+
+ma20_path=os.path.join(base_path, "market_access/market_access_2020_merged.geojson")
+ma20=gpd.read_file(ma20_path)
+
+
+grid["ma_minutes_2010"] = ma10.shortest_distance /60
+grid["ma_minutes_2015"] = ma15.shortest_distance /60
+grid["ma_minutes_2020"] = ma20.shortest_distance /60
+
+###
+
+mkt_polygon_path =os.path.join(base_path, "market_access/market_polygons_2000.geojson")
+mkt_polygon=gpd.read_file(mkt_polygon_path)
+mkt_polygon[["country"]]="Cambodia"
+
+mkt_polygon_dissolve=mkt_polygon[["country", "geometry"]].dissolve(by="country")
+
+mkt_polygon_int=grid.geometry.intersects(mkt_polygon_dissolve.geometry[0])
+
+grid.loc[mkt_polygon_int, ["ma_minutes_2010", "ma_minutes_2015", "ma_minutes_2020"]] = 0
+
+###
+
 
 ##########
 
 grid.drop(["left", "top", "right", "bottom"], axis=1, inplace=True)
+
+csv_out=os.path.join(base_path, "cambodia_roads_grid.csv")
+grid.drop(["geometry"],axis=1).to_csv(csv_out, index=False)
 
 
 geo_out=os.path.join(base_path, "cambodia_roads_grid.geojson")
 grid.to_file(geo_out, driver="GeoJSON")
 
 
-
-csv_out=os.path.join(base_path, "cambodia_roads_grid.csv")
-grid.drop(["geometry"],axis=1).to_csv(csv_out, index=False)
 
 
 ######

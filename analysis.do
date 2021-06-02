@@ -74,7 +74,9 @@ forv year =2001/2004 {
 
 ***
 
-reshape long vcf_treecover_mean vcf_treecover_min vcf_treecover_max vcf_treecover_count vcf_nontreeveg_mean vcf_nontreeveg_min vcf_nontreeveg_max vcf_nontreeveg_count vcf_nonveg_mean vcf_nonveg_min vcf_nonveg_max vcf_nonveg_count ndvi_mean ndvi_min ndvi_max ndvi_count hansen_mean hansen_min hansen_max hansen_count precipitation_mean precipitation_min precipitation_max precipitation_count temperature_mean temperature_min temperature_max temperature_count population_mean population_min population_max population_count, i(id) j(year)
+reshape long vcf_treecover_mean vcf_treecover_min vcf_treecover_max vcf_treecover_count vcf_nontreeveg_mean vcf_nontreeveg_min vcf_nontreeveg_max vcf_nontreeveg_count vcf_nonveg_mean vcf_nonveg_min vcf_nonveg_max vcf_nonveg_count ndvi_mean ndvi_min ndvi_max ndvi_count hansen_mean hansen_min hansen_max hansen_count precipitation_mean precipitation_min precipitation_max precipitation_count temperature_mean temperature_min temperature_max temperature_count population_mean population_min population_max population_count ma_minutes_, i(id) j(year)
+
+rename ma_minutes_ ma_minutes
 
 gen construction_year = (year>=transactions_start_year & year<=road_completion_year) | (year>=transactions_start_year & date2=="2021-12-31")
 
@@ -161,7 +163,12 @@ graph export "$results/hist_annual_VCFnonveg.png", replace
 twoway (hist hansen_mean), by(year) xtitle("Hansen pct. forested distribution")
 graph export "$results/hist_annual_hansen.png", replace
 
-
+twoway hist ma_minutes if year==2010, xscale(range(0 350)) xlabel(0(60)300) name(ma10, replace) width(5) yscale(range(0 0.025))
+graph export "$results/hist_marketaccess_2010.png", replace
+twoway hist ma_minutes if year==2015, xscale(range(0 350)) xlabel(0(60)300) name(ma15, replace) width(5) yscale(range(0 0.025))
+graph export "$results/hist_marketaccess_2015.png", replace
+twoway hist ma_minutes if year==2020, xscale(range(0 350)) xlabel(0(60)300) name(ma20, replace) width(5) yscale(range(0 0.025))
+graph export "$results/hist_marketaccess_2020.png", replace
 
 corr ndvi_min ndvi_mean ndvi_max vcf_treecover_mean vcf_nontreeveg_mean vcf_nonveg_mean hansen_min hansen_mean hansen_max
 
