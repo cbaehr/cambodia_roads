@@ -21,7 +21,7 @@ network.loc[np.isnan(network.speed_limit), "speed_limit"] = 0
 
 
 
-for i in [2010, 2015, 2020]:
+for i in range(2008, 2021):
 	print(i)
 	gcdroads_dum=gcdroads["year"] > i
 	gcdroads_i = gcdroads.loc[gcdroads_dum, ]

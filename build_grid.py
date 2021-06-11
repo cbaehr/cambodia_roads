@@ -380,6 +380,11 @@ grid=pd.concat([grid, stats_df], axis=1)
 
 ###
 
+for i in range(2008, 2021):
+	ma_path=os.path.join(base_path, "market_access/market_access_{}_merged_majorONLY.geojson".format(i))
+	ma=gpd.read_file(ma_path)
+	grid["ma_minutes_bigcity_{}".format(i)]=ma.shortest_distance /60
+
 ma10_path=os.path.join(base_path, "market_access/market_access_2010_merged.geojson")
 ma10=gpd.read_file(ma10_path)
 
@@ -405,6 +410,10 @@ mkt_polygon_dissolve=mkt_polygon[["country", "geometry"]].dissolve(by="country")
 mkt_polygon_int=grid.geometry.intersects(mkt_polygon_dissolve.geometry[0])
 
 grid.loc[mkt_polygon_int, ["ma_minutes_2010", "ma_minutes_2015", "ma_minutes_2020"]] = 0
+
+ma_names = ["ma_minutes_bigcity_{}".format(i) for i in range(2008, 2021)]
+grid.loc[mkt_polygon_int, ma_names] = 0
+
 
 ###
 
