@@ -970,18 +970,105 @@ reghdfe ndvi_mean ma_minutes_bigcity temperature_mean precipitation_mean, cluste
 outreg2 using "$results/ndvimodels_traveltime.doc", append noni nocons addtext("Climate Controls", Y, "Year FEs", Y, "Grid cell FEs", Y)
 
 reghdfe ndvi_mean ma_minutes_bigcity c.ma_minutes_bigcity#c.(concession_dummy protectedarea_dummy plantation_dummy) temperature_mean precipitation_mean, cluster(project_id year) absorb(year id)
-outreg2 using "$results/ndvimodels_traveltime.doc", replace noni nocons addtext("Climate Controls", Y, "Year FEs", Y, "Grid cell FEs", Y)
+outreg2 using "$results/ndvimodels_traveltime.doc", append noni nocons addtext("Climate Controls", Y, "Year FEs", Y, "Grid cell FEs", Y)
 
 
 rm "$results/ndvimodels_traveltime.txt"
 
+********************************************************************************
+
+* land concession event study
+
+gen time_to_trt_concession = (year - concession_year) - 1
+
+replace time_to_trt_concession=time_to_trt_concession+30
+replace time_to_trt_concession=39 if time_to_trt_concession>=39 & !missing(time_to_trt_concession)
+replace time_to_trt_concession=21 if time_to_trt_concession<=21 & !missing(time_to_trt_concession)
 
 
+reghdfe ndvi_mean ib30.time_to_trt_concession i.year if (cond1 & baseline_dum), cluster(project_id year) absorb(id )
+est sto tsc1
+esttab tsc1 using "$results/temp.csv", replace plain wide noobs cells((b ci_l ci_u))
+
+preserve
+
+import delimited "$results/temp.csv", clear varnames(2)
+
+gen a =substr(v1, 4, 22)
+keep if a=="time_to_trt_concession"
+
+gen c=substr(v1, 1, 2)
+destring c, replace
+keep if c>=22 & c<=38
+
+*expand 2 if _n==1
+*replace v1="30.time_to_trt_concession" if _n==_N
+*replace b=0 if _n==_N
+
+sum min95 if v1=="29.time_to_trt_concession" | v1=="31.time_to_trt_concession"
+*replace min95 = r(mean) if _n==_N
+replace min95 = r(mean) if v1=="30.time_to_trt_concession"
+
+sum max95 if v1=="29.time_to_trt_concession" | v1=="31.time_to_trt_concession"
+*replace max95 = r(mean) if _n==_N
+replace max95 = r(mean) if v1=="30.time_to_trt_concession"
 
 
+sort v1
+gen v2 = _n - 9
+
+twoway (line b v2) (line min95 v2, lpattern(dash) lcolor(navy)) (line max95 v2, lpattern(dash) lcolor(navy)), graphregion(color(white)) bgcolor(white) legend(off) xlab(-8(1)8) xline(0) text(-0.095 0 "Road completion", size(vsmall) placement(east) color(cranberry)) title("Event study - NDVI") xtitle("Time to land concession status") ytitle("Treatment effects on NDVI")  
+*saving("$results/eventstudy_VCFtreecover", replace)
+
+restore
+
+***
 
 
+* protected area event study
 
+gen time_to_trt_pa = (year - protectedarea_year) - 1
+
+replace time_to_trt_pa=time_to_trt_pa+30
+replace time_to_trt_pa=39 if time_to_trt_pa>=39 & !missing(time_to_trt_pa)
+replace time_to_trt_pa=21 if time_to_trt_pa<=21 & !missing(time_to_trt_pa)
+
+
+reghdfe ndvi_mean ib30.time_to_trt_pa i.year if (cond1 & baseline_dum), cluster(project_id year) absorb(id )
+est sto tsc2
+esttab tsc2 using "$results/temp.csv", replace plain wide noobs cells((b ci_l ci_u))
+
+preserve
+
+import delimited "$results/temp.csv", clear varnames(2)
+
+gen a =substr(v1, 4, 17)
+keep if a=="time_to_trt_pa"
+
+gen c=substr(v1, 1, 2)
+destring c, replace
+keep if c>=22 & c<=38
+
+*expand 2 if _n==1
+*replace v1="30.time_to_trt_concession" if _n==_N
+*replace b=0 if _n==_N
+
+sum min95 if v1=="29.time_to_trt_pa" | v1=="31.time_to_trt_pa"
+*replace min95 = r(mean) if _n==_N
+replace min95 = r(mean) if v1=="30.time_to_trt_pa"
+
+sum max95 if v1=="29.time_to_trt_pa" | v1=="31.time_to_trt_pa"
+*replace max95 = r(mean) if _n==_N
+replace max95 = r(mean) if v1=="30.time_to_trt_pa"
+
+
+sort v1
+gen v2 = _n - 9
+
+twoway (line b v2) (line min95 v2, lpattern(dash) lcolor(navy)) (line max95 v2, lpattern(dash) lcolor(navy)), graphregion(color(white)) bgcolor(white) legend(off) xlab(-8(1)8) xline(0) text(-0.095 0 "Road completion", size(vsmall) placement(east) color(cranberry)) title("Event study - NDVI") xtitle("Time to protected area status") ytitle("Treatment effects on NDVI")  
+*saving("$results/eventstudy_VCFtreecover", replace)
+
+restore
 
 
 

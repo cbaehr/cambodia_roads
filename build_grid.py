@@ -422,6 +422,11 @@ grid.loc[mkt_polygon_int, ma_names] = 0
 
 grid.drop(["left", "top", "right", "bottom"], axis=1, inplace=True)
 
+a=grid.geometry.centroid
+grid["x"]=a.x
+grid["y"]=a.y
+
+
 csv_out=os.path.join(base_path, "cambodia_roads_grid.csv")
 grid.drop(["geometry"],axis=1).to_csv(csv_out, index=False)
 
