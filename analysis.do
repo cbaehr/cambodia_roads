@@ -149,7 +149,7 @@ replace baseline_dum = . if missing(baseline_hansen_mean)
 
 gen temp=1
 
-stop
+*stop
 
 
 ********************************************************************************
@@ -224,7 +224,8 @@ outreg2 using "$results/mainmodels_ndvi.doc", append noni nocons addtext("Climat
 reghdfe ndvi_mean completed_road if cond1, cluster(project_id year) absorb(year id)
 outreg2 using "$results/mainmodels_ndvi.doc", append noni nocons addtext("Climate Controls", N, "Year FEs", Y, "Grid cell FEs", Y)
 
-reghdfe ndvi_mean completed_road c.completed_road#c.(concession_dummy protectedarea_dummy plantation_dummy) if cond1, cluster(project_id year) absorb(year id)
+reghdfe ndvi_mean completed_road c.completed_road##c.(active_concession active_protectedarea plantation_dummy) if cond1, cluster(project_id year) absorb(year id)
+
 outreg2 using "$results/mainmodels_ndvi.doc", append noni nocons addtext("Climate Controls", N, "Year FEs", Y, "Grid cell FEs", Y)
 
 reghdfe ndvi_mean completed_road temperature_mean precipitation_mean if cond1, cluster(project_id year) absorb(year id)
@@ -244,7 +245,7 @@ outreg2 using "$results/maccessmodels_ndvi.doc", append noni nocons addtext("Cli
 reghdfe ndvi_mean ma_minutes if cond1, cluster(project_id year) absorb(year id)
 outreg2 using "$results/maccessmodels_ndvi.doc", append noni nocons addtext("Climate Controls", N, "Year FEs", Y, "Grid cell FEs", Y)
 
-reghdfe ndvi_mean ma_minutes c.completed_road#c.(concession_dummy protectedarea_dummy plantation_dummy) if cond1, cluster(project_id year) absorb(year id)
+reghdfe ndvi_mean ma_minutes c.completed_road##c.(active_concession active_protectedarea plantation_dummy) if cond1, cluster(project_id year) absorb(year id)
 outreg2 using "$results/maccessmodels_ndvi.doc", append noni nocons addtext("Climate Controls", N, "Year FEs", Y, "Grid cell FEs", Y)
 
 reghdfe ndvi_mean ma_minutes temperature_mean precipitation_mean if cond1, cluster(project_id year) absorb(year id)
@@ -264,7 +265,7 @@ outreg2 using "$results/mainmodels_hansen.doc", append noni nocons addtext("Clim
 reghdfe hansen_mean completed_road if cond1, cluster(project_id year) absorb(year id)
 outreg2 using "$results/mainmodels_hansen.doc", append noni nocons addtext("Climate Controls", N, "Year FEs", Y, "Grid cell FEs", Y)
 
-reghdfe hansen_mean completed_road c.completed_road#c.(concession_dummy protectedarea_dummy plantation_dummy) if cond1, cluster(project_id year) absorb(year id)
+reghdfe hansen_mean completed_road c.completed_road##c.(active_concession active_protectedarea plantation_dummy) if cond1, cluster(project_id year) absorb(year id)
 outreg2 using "$results/mainmodels_hansen.doc", append noni nocons addtext("Climate Controls", N, "Year FEs", Y, "Grid cell FEs", Y)
 
 
@@ -285,7 +286,7 @@ outreg2 using "$results/mainmodels_VCFtreecover.doc", append noni nocons addtext
 reghdfe vcf_treecover_mean completed_road if cond1, cluster(project_id year) absorb(year id)
 outreg2 using "$results/mainmodels_VCFtreecover.doc", append noni nocons addtext("Climate Controls", N, "Year FEs", Y, "Grid cell FEs", Y)
 
-reghdfe vcf_treecover_mean completed_road c.completed_road#c.(concession_dummy protectedarea_dummy plantation_dummy) if cond1, cluster(project_id year) absorb(year id)
+reghdfe vcf_treecover_mean completed_road c.completed_road##c.(active_concession active_protectedarea plantation_dummy) if cond1, cluster(project_id year) absorb(year id)
 outreg2 using "$results/mainmodels_VCFtreecover.doc", append noni nocons addtext("Climate Controls", N, "Year FEs", Y, "Grid cell FEs", Y)
 
 reghdfe vcf_treecover_mean completed_road temperature_mean precipitation_mean if cond1, cluster(project_id year) absorb(year id)
@@ -917,7 +918,7 @@ outreg2 using "$results/mainmodels_traveltime.doc", append noni nocons addtext("
 reghdfe ma_minutes_bigcity completed_road, cluster(project_id year) absorb(year id)
 outreg2 using "$results/mainmodels_traveltime.doc", append noni nocons addtext("Climate Controls", N, "Year FEs", Y, "Grid cell FEs", Y)
 
-reghdfe ma_minutes_bigcity completed_road c.completed_road#c.(concession_dummy protectedarea_dummy plantation_dummy), cluster(project_id year) absorb(year id)
+reghdfe ma_minutes_bigcity completed_road c.completed_road##c.(active_concession active_protectedarea plantation_dummy), cluster(project_id year) absorb(year id)
 outreg2 using "$results/mainmodels_traveltime.doc", append noni nocons addtext("Climate Controls", N, "Year FEs", Y, "Grid cell FEs", Y)
 
 *reghdfe ma_minutes_bigcity completed_road temperature_mean precipitation_mean, cluster(project_id year) absorb(year id)
@@ -963,13 +964,13 @@ outreg2 using "$results/ndvimodels_traveltime.doc", append noni nocons addtext("
 reghdfe ndvi_mean ma_minutes_bigcity, cluster(project_id year) absorb(year id)
 outreg2 using "$results/ndvimodels_traveltime.doc", append noni nocons addtext("Climate Controls", N, "Year FEs", Y, "Grid cell FEs", Y)
 
-reghdfe ndvi_mean ma_minutes_bigcity c.ma_minutes_bigcity#c.(concession_dummy protectedarea_dummy plantation_dummy), cluster(project_id year) absorb(year id)
+reghdfe ndvi_mean ma_minutes_bigcity c.ma_minutes_bigcity##c.(active_concession active_protectedarea plantation_dummy), cluster(project_id year) absorb(year id)
 outreg2 using "$results/ndvimodels_traveltime.doc", append noni nocons addtext("Climate Controls", N, "Year FEs", Y, "Grid cell FEs", Y)
 
 reghdfe ndvi_mean ma_minutes_bigcity temperature_mean precipitation_mean, cluster(project_id year) absorb(year id)
 outreg2 using "$results/ndvimodels_traveltime.doc", append noni nocons addtext("Climate Controls", Y, "Year FEs", Y, "Grid cell FEs", Y)
 
-reghdfe ndvi_mean ma_minutes_bigcity c.ma_minutes_bigcity#c.(concession_dummy protectedarea_dummy plantation_dummy) temperature_mean precipitation_mean, cluster(project_id year) absorb(year id)
+reghdfe ndvi_mean ma_minutes_bigcity c.ma_minutes_bigcity##c.(active_concession active_protectedarea plantation_dummy) temperature_mean precipitation_mean, cluster(project_id year) absorb(year id)
 outreg2 using "$results/ndvimodels_traveltime.doc", append noni nocons addtext("Climate Controls", Y, "Year FEs", Y, "Grid cell FEs", Y)
 
 
