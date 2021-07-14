@@ -1,5 +1,5 @@
 
-base_path = "/Users/christianbaehr/Desktop/cambodia roads/data"
+base_path = "/Users/christianbaehr/Box Sync/cambodia roads/data"
 #base_path="/sciclone/data10/aiddata20/projects/cambodia_roads"
 
 import os
@@ -416,6 +416,36 @@ grid.loc[mkt_polygon_int, ma_names] = 0
 
 
 ###
+
+minecas_path=os.path.join(base_path, "mine-and-erw-causality-2005-2013.geojson")
+minecas = gpd.read_file(minecas_path)
+
+minecas["incyear"]=minecas["Incident_D"].str.slice(stop=4)
+
+minecas=minecas.to_crs("EPSG:4326")
+
+x=gpd.sjoin(grid[["id", "geometry"]], minecas, op="intersects", how="left")
+x["incyear"]=x["incyear"].astype("str")
+
+y=x.pivot_table(values="incyear", index="id", aggfunc='|'.join)
+
+z = y["incyear"].to_list()
+
+def build(year_str):
+	j = year_str.split('|')
+	return {i:j.count(i) for i in set(j)}
+
+z = list(map(build, z))
+z = pd.DataFrame(z)
+
+z.drop(["nan"], axis=1, inplace=True)
+
+for i in range(2005, 2014):
+	z.loc[z[str(i)].isnull(), str(i)] = 0
+
+z.columns=["minecasualty"+str(i) for i in z.columns]
+
+grid = pd.concat([grid, z], axis=1)
 
 
 ##########

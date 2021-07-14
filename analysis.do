@@ -1,7 +1,8 @@
 
 
 
-global data "/Users/christianbaehr/Desktop/cambodia roads/data"
+*global data "/Users/christianbaehr/Desktop/cambodia roads/data"
+global data "/Users/christianbaehr/Box Sync/cambodia roads/data"
 global results "/Users/christianbaehr/Box Sync/cambodia_roads/results"
 
 *ssc install grstyle
@@ -74,7 +75,7 @@ forv year =2001/2004 {
 
 ***
 
-reshape long vcf_treecover_mean vcf_treecover_min vcf_treecover_max vcf_treecover_count vcf_nontreeveg_mean vcf_nontreeveg_min vcf_nontreeveg_max vcf_nontreeveg_count vcf_nonveg_mean vcf_nonveg_min vcf_nonveg_max vcf_nonveg_count ndvi_mean ndvi_min ndvi_max ndvi_count hansen_mean hansen_min hansen_max hansen_count precipitation_mean precipitation_min precipitation_max precipitation_count temperature_mean temperature_min temperature_max temperature_count population_mean population_min population_max population_count ma_minutes_ ma_minutes_bigcity_, i(id) j(year)
+reshape long vcf_treecover_mean vcf_treecover_min vcf_treecover_max vcf_treecover_count vcf_nontreeveg_mean vcf_nontreeveg_min vcf_nontreeveg_max vcf_nontreeveg_count vcf_nonveg_mean vcf_nonveg_min vcf_nonveg_max vcf_nonveg_count ndvi_mean ndvi_min ndvi_max ndvi_count hansen_mean hansen_min hansen_max hansen_count precipitation_mean precipitation_min precipitation_max precipitation_count temperature_mean temperature_min temperature_max temperature_count population_mean population_min population_max population_count ma_minutes_ ma_minutes_bigcity_ minecasualty, i(id) j(year)
 
 rename ma_minutes_ ma_minutes
 rename ma_minutes_bigcity_ ma_minutes_bigcity
@@ -121,7 +122,11 @@ replace temperature_min = ((temperature_min -273.15) * 9/5) + 32
 gen log_ndvi_mean = log(ndvi_mean)
 gen log_vcftreecover_mean = log(vcf_treecover_mean)
 
+
 xtset id year
+
+replace minecasualty = 0 if missing(minecasualty)
+bysort id  (year) : g minecasualty_cum= sum(minecasualty)
 
 bysort id (year): gen ndvi_pchange= 100*D.ndvi_mean/L.ndvi_mean
 bysort id (year): gen hansen_pchange= 100*D.hansen_mean/L.hansen_mean
@@ -149,7 +154,7 @@ replace baseline_dum = . if missing(baseline_hansen_mean)
 
 gen temp=1
 
-*stop
+stop
 
 
 ********************************************************************************
@@ -319,6 +324,8 @@ gen c=substr(v1, 1, 2)
 destring c, replace
 keep if c>=22 & c<=38
 
+drop if v1=="30.time_to_treatment"
+
 expand 2 if _n==1
 replace v1="30.time_to_treatment" if _n==_N
 replace b=0 if _n==_N
@@ -355,6 +362,8 @@ gen c=substr(v1, 1, 2)
 destring c, replace
 keep if c>=22 & c<=38
 
+drop if v1=="30.time_to_treatment"
+
 expand 2 if _n==1
 replace v1="30.time_to_treatment" if _n==_N
 replace b=0 if _n==_N
@@ -390,6 +399,8 @@ keep if a=="time_to_treatment"
 gen c=substr(v1, 1, 2)
 destring c, replace
 keep if c>=22 & c<=38
+
+drop if v1=="30.time_to_treatment"
 
 expand 2 if _n==1
 replace v1="30.time_to_treatment" if _n==_N
@@ -1072,8 +1083,22 @@ twoway (line b v2) (line min95 v2, lpattern(dash) lcolor(navy)) (line max95 v2, 
 restore
 
 
+********************************************************************************
+
+su plantation_dummy
 
 
+reghdfe vcf_nontreeveg_mean ibn.dist_from_treatment#c.completed_road if (cond1 & plantation_dummy), absorb(year id) cluster(project_id year)
+est sto hs9
+reghdfe vcf_nontreeveg_mean ibn.dist_from_treatment#c.completed_road if (cond1 & !plantation_dummy), absorb(year id) cluster(project_id year)
+est sto hs10
+
+coefplot hs9, bylabel(Plantation) || hs10, bylabel(Non-plantation) ||, keep(*.dist_from_treatment#c.completed_road) vertical yline(0) rename(1.dist_from_treatment#c.completed_road=1 2.dist_from_treatment#c.completed_road=2 3.dist_from_treatment#c.completed_road=3 4.dist_from_treatment#c.completed_road=4 5.dist_from_treatment#c.completed_road=5 6.dist_from_treatment#c.completed_road=6 7.dist_from_treatment#c.completed_road=7 8.dist_from_treatment#c.completed_road=8 9.dist_from_treatment#c.completed_road=9 10.dist_from_treatment#c.completed_road=10) graphregion(color(white)) bgcolor(white) xtitle("Distance from treatment road (km)") ytitle("Effect on VCF non-tree vegetation %") saving("$results/distance_VCFnontreeveg_byplantationstatus", replace) 
+*title("VCF non-tree veg. TE by dist. from treatment road")
+
+********************************************************************************
+
+corr minecasualty_cum concession_year if year==2018
 
 
 

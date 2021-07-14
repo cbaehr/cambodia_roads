@@ -131,12 +131,20 @@ landconcession.loc[lc_dum, "contract_0"] = landconcession.loc[lc_dum, "sub_decre
 
 landconcession = landconcession.to_crs("EPSG:4326")
 
-lc_grid = gpd.sjoin(grid[["id","geometry"]], landconcession[["contract_0", "geometry"]], op="intersects", how="left")
+landconcession.rename({"id":"lc_id"}, axis=1, inplace=True)
 
-min_years_lc = lc_grid.groupby("id")["contract_0"].min()
+lc_grid = gpd.sjoin(grid[["id","geometry"]], landconcession[["lc_id", "contract_0", "geometry"]], op="intersects", how="left")
 
-grid = grid.merge(min_years_lc, left_on="id", right_index=True)
 
+lc_grid=lc_grid.sort_values("contract_0").groupby("id", as_index=False).first()[["id", "lc_id", "contract_0"]]
+
+#min_years_lc = lc_grid.groupby("id")["contract_0"]
+
+grid = grid.merge(lc_grid, left_on="id", right_on="id")
+
+if "contract_0_y" in grid.columns:
+	grid.drop(["contract_0_x"], axis=1, inplace=True)
+	grid.rename({"contract_0_y":"contract_0"}, axis=1, inplace=True)
 
 ###
 
@@ -150,13 +158,18 @@ protectedarea["issuedate"] = pd.to_datetime(protectedarea["issuedate"], format="
 
 protectedarea = protectedarea.to_crs("EPSG:4326")
 
-pa_grid = gpd.sjoin(grid[["id","geometry"]], protectedarea[["issuedate", "geometry"]], op="intersects", how="left")
+protectedarea.rename({"id":"pa_id"}, axis=1, inplace=True)
+
+
+pa_grid = gpd.sjoin(grid[["id","geometry"]], protectedarea[["pa_id", "issuedate", "geometry"]], op="intersects", how="left")
 #pa_grid.index.name = None
 
-min_years_pa = pa_grid.groupby("id")["issuedate"].min()
-min_years_pa.index.name = None
+pa_grid=pa_grid.sort_values("issuedate").groupby("id", as_index=False).first()[["id", "pa_id", "issuedate"]]
 
-grid = grid.merge(min_years_pa, left_on="id", right_index=True)
+#min_years_pa = pa_grid.groupby("id")["issuedate"].min()
+#min_years_pa.index.name = None
+
+grid = grid.merge(pa_grid, left_on="id", right_on="id")
 
 
 # tree plantation data maybe not useful. Based on satellite imagery so endogenous
@@ -171,13 +184,24 @@ grid = grid.merge(min_years_pa, left_on="id", right_index=True)
 #plantation=gpd.read_file(plantation_path)
 plantation[["country"]] = "Cambodia"
 
-pl_dissolve = plantation[["country", "geometry"]]
-pl_dissolve=pl_dissolve.dissolve(by="country")
+plantation.rename({"objectid":"pl_id"}, axis=1, inplace=True)
 
-pl_int = grid.geometry.intersects(pl_dissolve.geometry[0])
-pl_int=pl_int*1
+#pl_dissolve = plantation[["country", "geometry"]]
+#pl_dissolve=pl_dissolve.dissolve(by="country")
 
-grid["plantation"]=pl_int
+#pl_int = grid.geometry.intersects(pl_dissolve.geometry[0])
+#pl_int=pl_int*1
+
+pl_grid = gpd.sjoin(grid[["id","geometry"]], plantation[["pl_id", "geometry"]], op="intersects", how="left")
+#pa_grid.index.name = None
+
+min_years_pl = pl_grid.groupby("id")["pl_id"].min()
+min_years_pl.index.name = None
+
+grid = grid.merge(min_years_pl, left_on="id", right_index=True)
+
+
+#grid["plantation"]=pl_int
 
 ##########
 
