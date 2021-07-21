@@ -300,6 +300,26 @@ outreg2 using "$results/mainmodels_VCFtreecover.doc", append noni nocons addtext
 
 rm "$results/mainmodels_VCFtreecover.txt"
 
+***
+
+reghdfe vcf_nontreeveg_mean completed_road if cond1, cluster(project_id year) absorb(temp)
+outreg2 using "$results/mainmodels_VCFnontreeveg.doc", replace noni nocons addtext("Climate Controls", N, "Year FEs", N, "Grid cell FEs", N) addnote("Sample consists of 1 sq. km grid cells w/in 10km of a Chinese-funded road. Drop cells with lower than 10% treecover. Cluster by road and year.")
+
+reghdfe vcf_nontreeveg_mean completed_road if cond1, cluster(project_id year) absorb(year)
+outreg2 using "$results/mainmodels_VCFnontreeveg.doc", append noni nocons addtext("Climate Controls", N, "Year FEs", Y, "Grid cell FEs", N)
+
+reghdfe vcf_nontreeveg_mean completed_road if cond1, cluster(project_id year) absorb(year id)
+outreg2 using "$results/mainmodels_VCFnontreeveg.doc", append noni nocons addtext("Climate Controls", N, "Year FEs", Y, "Grid cell FEs", Y)
+
+reghdfe vcf_nontreeveg_mean completed_road c.completed_road##c.(active_concession active_protectedarea plantation_dummy) if cond1, cluster(project_id year) absorb(year id)
+outreg2 using "$results/mainmodels_VCFnontreeveg.doc", append noni nocons addtext("Climate Controls", N, "Year FEs", Y, "Grid cell FEs", Y)
+
+reghdfe vcf_nontreeveg_mean completed_road temperature_mean precipitation_mean if cond1, cluster(project_id year) absorb(year id)
+outreg2 using "$results/mainmodels_VCFnontreeveg.doc", append noni nocons addtext("Climate Controls", Y, "Year FEs", Y, "Grid cell FEs", Y)
+
+
+rm "$results/mainmodels_VCFnontreeveg.txt"
+
 ********************************************************************************
 
 *gen temp1 = (time_to_treatment<=39 & time_to_treatment>=21)
@@ -755,6 +775,7 @@ keep if a=="time_to_treatment"
 gen c=substr(v1, 1, 2)
 destring c, replace
 keep if c>=22 & c<=38
+drop if v1=="30.time_to_treatment"
 expand 2 if _n==1
 replace v1="30.time_to_treatment" if _n==_N
 replace b=0 if _n==_N
@@ -773,6 +794,8 @@ keep if a=="time_to_treatment"
 gen c=substr(v1, 1, 2)
 destring c, replace
 keep if c>=22 & c<=38
+drop if v1=="30.time_to_treatment"
+
 expand 2 if _n==1
 replace v1="30.time_to_treatment" if _n==_N
 replace b=0 if _n==_N

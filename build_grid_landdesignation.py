@@ -1,5 +1,6 @@
 
-base_path = "/Users/christianbaehr/Desktop/cambodia roads/data"
+#base_path = "/Users/christianbaehr/Desktop/cambodia roads/data"
+base_path = "/Users/christianbaehr/Box Sync/cambodia roads/data"
 #base_path="/sciclone/data10/aiddata20/projects/cambodia_roads"
 
 import os
@@ -457,6 +458,21 @@ grid=pd.concat([grid, stats_df], axis=1)
 
 #ma_names = ["ma_minutes_bigcity_{}".format(i) for i in range(2008, 2021)]
 #grid.loc[mkt_polygon_int, ma_names] = 0
+
+###
+
+for i in range(2008, 2021):
+	ma_path = os.path.join(base_path, "market_access/market_access_{}_landdesignation_majorONLY_2008roadsonly.geojson".format(i))
+	ma = gpd.read_file(ma_path)
+	if "shortest_distance_min" not in ma.columns:
+		ma["shortest_distance_min"] = ma["shortest_distance"] / 60
+	col_name = "ma_minutes_2008roadsonly_{}".format(i)
+	grid[col_name] = ma["shortest_distance_min"]
+
+for i in range(2008, 2021):
+	grid["ma_minutes_2008roadsonly_{}".format(i)].describe()
+
+
 
 
 ###

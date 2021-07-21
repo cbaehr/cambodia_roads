@@ -447,6 +447,18 @@ z.columns=["minecasualty"+str(i) for i in z.columns]
 
 grid = pd.concat([grid, z], axis=1)
 
+###
+
+for i in range(2008, 2021):
+	ma_path = os.path.join(base_path, "market_access/market_access_{}_majorONLY_2008roadsonly.geojson".format(i))
+	ma = gpd.read_file(ma_path)
+	if "shortest_distance_min" not in ma.columns:
+		ma["shortest_distance_min"] = ma["shortest_distance"] / 60
+	col_name = "ma_minutes_2008roadsonly_{}".format(i)
+	grid[col_name] = ma["shortest_distance_min"]
+
+for i in range(2008, 2021):
+	grid["ma_minutes_2008roadsonly_{}".format(i)].describe()
 
 ##########
 

@@ -1,6 +1,7 @@
 
 
-global data "/Users/christianbaehr/Desktop/cambodia roads/data"
+*global data "/Users/christianbaehr/Desktop/cambodia roads/data"
+global data "/Users/christianbaehr/Box Sync/cambodia roads/data"
 global results "/Users/christianbaehr/Box Sync/cambodia_roads/results_landdesignationgrid"
 
 *ssc install grstyle
@@ -47,7 +48,6 @@ gen id_long = pl_id_string + " " + lc_id + " " + pa_id
 encode id_long, generate(ld_id)
 
 *su lc_id pa_id pl_id_string
-
 *rename plantation plantation_dummy
 
 gen baseline_ndvi_mean = ndvi_mean2000*0.0001
@@ -87,10 +87,11 @@ forv year =2001/2004 {
 
 ***
 
-reshape long vcf_treecover_mean vcf_treecover_min vcf_treecover_max vcf_treecover_count vcf_nontreeveg_mean vcf_nontreeveg_min vcf_nontreeveg_max vcf_nontreeveg_count vcf_nonveg_mean vcf_nonveg_min vcf_nonveg_max vcf_nonveg_count ndvi_mean ndvi_min ndvi_max ndvi_count hansen_mean hansen_min hansen_max hansen_count precipitation_mean precipitation_min precipitation_max precipitation_count temperature_mean temperature_min temperature_max temperature_count population_mean population_min population_max population_count ma_minutes_ ma_minutes_bigcity_, i(id) j(year)
+reshape long vcf_treecover_mean vcf_treecover_min vcf_treecover_max vcf_treecover_count vcf_nontreeveg_mean vcf_nontreeveg_min vcf_nontreeveg_max vcf_nontreeveg_count vcf_nonveg_mean vcf_nonveg_min vcf_nonveg_max vcf_nonveg_count ndvi_mean ndvi_min ndvi_max ndvi_count hansen_mean hansen_min hansen_max hansen_count precipitation_mean precipitation_min precipitation_max precipitation_count temperature_mean temperature_min temperature_max temperature_count population_mean population_min population_max population_count ma_minutes_ ma_minutes_bigcity_ ma_minutes_2008roadsonly_, i(id) j(year)
 
 rename ma_minutes_ ma_minutes
 rename ma_minutes_bigcity_ ma_minutes_bigcity
+rename ma_minutes_2008roadsonly_ ma_minutes_2008roadsonly
 
 
 gen construction_year = (year>=transactions_start_year & year<=road_completion_year) | (year>=transactions_start_year & date2=="2021-12-31")
@@ -179,11 +180,11 @@ graph export "$results/hist_annual_VCFnonveg.png", replace
 twoway (hist hansen_mean), by(year) xtitle("Hansen pct. forested distribution")
 graph export "$results/hist_annual_hansen.png", replace
 
-twoway hist ma_minutes if year==2010, xscale(range(0 350)) xlabel(0(60)300) name(ma10, replace) width(5) yscale(range(0 0.025)) ylabel(0(0.005) 0.025)
+twoway hist ma_minutes_2008roadsonly if year==2010, xscale(range(0 700)) xlabel(0(100)700) name(ma10, replace) width(5) yscale(range(0 0.003)) ylabel(0(0.001) 0.003)
 graph export "$results/hist_marketaccess_2010.png", replace
-twoway hist ma_minutes if year==2015, xscale(range(0 350)) xlabel(0(60)300) name(ma15, replace) width(5) yscale(range(0 0.025))
+twoway hist ma_minutes_2008roadsonly if year==2015, xscale(range(0 700)) xlabel(0(100)700) name(ma10, replace) width(5) yscale(range(0 0.003)) ylabel(0(0.001) 0.003)
 graph export "$results/hist_marketaccess_2015.png", replace
-twoway hist ma_minutes if year==2020, xscale(range(0 350)) xlabel(0(60)300) name(ma20, replace) width(5) yscale(range(0 0.025))
+twoway hist ma_minutes_2008roadsonly if year==2020, xscale(range(0 700)) xlabel(0(100)700) name(ma10, replace) width(5) yscale(range(0 0.003)) ylabel(0(0.001) 0.003)
 graph export "$results/hist_marketaccess_2020.png", replace
 
 corr ndvi_min ndvi_mean ndvi_max vcf_treecover_mean vcf_nontreeveg_mean vcf_nonveg_mean hansen_min hansen_mean hansen_max
@@ -198,11 +199,11 @@ sort year
 twoway (line annual_vcf_treecover_mean year) (line annual_vcf_nontreeveg_mean year) (line annual_vcf_nonveg_mean year), graphregion(color(white))
 graph export "$results/timeseries_VCFoutcomes.png", replace
 
-egen ma_minutes_bigcity_mean = mean(ma_minutes_bigcity), by(year)
-twoway line ma_minutes_bigcity_mean year if id==14724 & year>=2008, xlabel(2008(2)2020) xmtick(2009(2)2019) xtitle(Year) ytitle(Avg. travel time to city (min))
+egen ma_minutes_bigcity_mean = mean(ma_minutes_2008roadsonly), by(year)
+twoway line ma_minutes_bigcity_mean year if id==24827 & year>=2008, xlabel(2008(2)2020) xmtick(2009(2)2019) xtitle(Year) ytitle(Avg. travel time to city (min))
 graph export "$results/traveltime_bigcities_timeseries.png", replace
 
-twoway hist ma_minutes_bigcity if year>=2008, by(year) xtitle(Avg. travel time to city (min))
+twoway hist ma_minutes_2008roadsonly if year>=2008, by(year) xtitle(Avg. travel time to city (min))
 graph export "$results/traveltime_bigcities_histograms.png", replace
 
 ********************************************************************************
@@ -282,25 +283,22 @@ rm "$results/ldmodels_VCFtreecover.txt"
 ********************************************************************************
 
 
-reghdfe ma_minutes_bigcity completed_road, cluster(ld_id year) absorb(temp)
+reghdfe ma_minutes_2008roadsonly completed_road, cluster(ld_id year) absorb(temp)
 outreg2 using "$results/ldmodels_traveltime.doc", replace noni nocons addtext("Climate Controls", N, "Year FEs", N, "Grid cell FEs", N) addnote("Sample consists of 1 sq. km grid cells w/in 10km of a Chinese-funded road. Cluster by road and year.")
 
-reghdfe ma_minutes_bigcity completed_road, cluster(ld_id year) absorb(year)
+reghdfe ma_minutes_2008roadsonly completed_road, cluster(ld_id year) absorb(year)
 outreg2 using "$results/ldmodels_traveltime.doc", append noni nocons addtext("Climate Controls", N, "Year FEs", Y, "Grid cell FEs", N)
 
-reghdfe ma_minutes_bigcity completed_road, cluster(ld_id year) absorb(year id)
+reghdfe ma_minutes_2008roadsonly completed_road, cluster(ld_id year) absorb(year id)
 outreg2 using "$results/ldmodels_traveltime.doc", append noni nocons addtext("Climate Controls", N, "Year FEs", Y, "Grid cell FEs", Y)
 
-reghdfe ma_minutes_bigcity completed_road c.completed_road##c.(active_concession active_protectedarea plantation_dummy), cluster(ld_id year) absorb(year id)
+reghdfe ma_minutes_2008roadsonly completed_road c.completed_road##c.(active_concession active_protectedarea plantation_dummy), cluster(ld_id year) absorb(year id)
 outreg2 using "$results/ldmodels_traveltime.doc", append noni nocons addtext("Climate Controls", N, "Year FEs", Y, "Grid cell FEs", Y)
 
 *reghdfe ma_minutes_bigcity completed_road temperature_mean precipitation_mean, cluster(ld_id year) absorb(year id)
 *outreg2 using "$results/mainmodels_traveltime.doc", append noni nocons addtext("Climate Controls", Y, "Year FEs", Y, "Grid cell FEs", Y)
 
 rm "$results/ldmodels_traveltime.txt"
-
-
-
 
 ********************************************************************************
 
@@ -494,7 +492,28 @@ reghdfe ndvi_mean ibn.q_distance_to_road#c.completed_road if cond1, absorb(year 
 est sto r1
 coefplot r1, keep(*.q_distance_to_road#c.completed_road) vertical yline(0) rename(1.q_distance_to_road#c.completed_road=1st 2.q_distance_to_road#c.completed_road=2nd 3.q_distance_to_road#c.completed_road=3rd 4.q_distance_to_road#c.completed_road=4th 5.q_distance_to_road#c.completed_road=5th) graphregion(color(white)) bgcolor(white) xtitle("Distance to road quintile") ytitle("Effect on NDVI") title("NDVI TE by distance to road") 
 
+***
 
+reghdfe ndvi_mean ma_minutes_2008roadsonly, cluster(ld_id year) absorb(temp)
+outreg2 using "$results/ndvimodels_traveltime.doc", replace noni nocons addtext("Climate Controls", N, "Year FEs", N, "Grid cell FEs", N) addnote("Sample consists of 1 sq. km grid cells w/in 10km of a Chinese-funded road. Cluster by road and year.")
+
+reghdfe ndvi_mean ma_minutes_2008roadsonly, cluster(ld_id year) absorb(year)
+outreg2 using "$results/ndvimodels_traveltime.doc", append noni nocons addtext("Climate Controls", N, "Year FEs", Y, "Grid cell FEs", N)
+
+reghdfe ndvi_mean ma_minutes_2008roadsonly, cluster(ld_id year) absorb(year id)
+outreg2 using "$results/ndvimodels_traveltime.doc", append noni nocons addtext("Climate Controls", N, "Year FEs", Y, "Grid cell FEs", Y)
+
+reghdfe ndvi_mean ma_minutes_2008roadsonly c.ma_minutes_2008roadsonly##c.(active_concession active_protectedarea plantation_dummy), cluster(ld_id year) absorb(year id)
+outreg2 using "$results/ndvimodels_traveltime.doc", append noni nocons addtext("Climate Controls", N, "Year FEs", Y, "Grid cell FEs", Y)
+
+reghdfe ndvi_mean ma_minutes_2008roadsonly temperature_mean precipitation_mean, cluster(ld_id year) absorb(year id)
+outreg2 using "$results/ndvimodels_traveltime.doc", append noni nocons addtext("Climate Controls", Y, "Year FEs", Y, "Grid cell FEs", Y)
+
+reghdfe ndvi_mean ma_minutes_2008roadsonly c.ma_minutes_2008roadsonly##c.(active_concession active_protectedarea plantation_dummy) temperature_mean precipitation_mean, cluster(ld_id year) absorb(year id)
+outreg2 using "$results/ndvimodels_traveltime.doc", append noni nocons addtext("Climate Controls", Y, "Year FEs", Y, "Grid cell FEs", Y)
+
+
+rm "$results/ndvimodels_traveltime.txt"
 
 
 
