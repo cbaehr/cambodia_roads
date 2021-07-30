@@ -1,5 +1,5 @@
 
-base_path = "/Users/christianbaehr/Box Sync/cambodia roads/data"
+base_path = "/Users/christianbaehr/Box Sync/cambodia_roads_inputs/data"
 #base_path="/sciclone/data10/aiddata20/projects/cambodia_roads"
 
 import os

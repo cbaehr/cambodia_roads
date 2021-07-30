@@ -1,7 +1,7 @@
 
 
 *global data "/Users/christianbaehr/Desktop/cambodia roads/data"
-global data "/Users/christianbaehr/Box Sync/cambodia roads/data"
+global data "/Users/christianbaehr/Box Sync/cambodia_roads_inputs/data"
 global results "/Users/christianbaehr/Box Sync/cambodia_roads/results_landdesignationgrid"
 
 *ssc install grstyle
@@ -216,9 +216,6 @@ su
 ********************************************************************************
 
 
-
-
-
 reghdfe ndvi_mean completed_road if cond1, cluster(ld_id year) absorb(temp)
 outreg2 using "$results/ldmodels_ndvi.doc", replace noni nocons addtext("Climate Controls", N, "Year FEs", N, "Grid cell FEs", N) addnote("Sample consists of 1 sq. km grid cells w/in 10km of a Chinese-funded road. Drop cells with lower than 10% treecover. Cluster by land designation zone and year.")
 
@@ -238,8 +235,6 @@ outreg2 using "$results/ldmodels_ndvi.doc", append noni nocons addtext("Climate 
 rm "$results/ldmodels_ndvi.txt"
 
 ***
-
-
 
 reghdfe hansen_mean completed_road if cond1, cluster(ld_id year) absorb(temp)
 outreg2 using "$results/ldmodels_hansen.doc", replace noni nocons addtext("Climate Controls", N, "Year FEs", N, "Grid cell FEs", N) addnote("Sample consists of 1 sq. km grid cells w/in 10km of a Chinese-funded road. Drop cells with lower than 10% treecover. Cluster by road and year.")
@@ -495,7 +490,7 @@ coefplot r1, keep(*.q_distance_to_road#c.completed_road) vertical yline(0) renam
 ***
 
 reghdfe ndvi_mean ma_minutes_2008roadsonly, cluster(ld_id year) absorb(temp)
-outreg2 using "$results/ndvimodels_traveltime.doc", replace noni nocons addtext("Climate Controls", N, "Year FEs", N, "Grid cell FEs", N) addnote("Sample consists of 1 sq. km grid cells w/in 10km of a Chinese-funded road. Cluster by road and year.")
+outreg2 using "$results/ndvimodels_traveltime.doc", replace noni nocons addtext("Climate Controls", N, "Year FEs", N, "Grid cell FEs", N) addnote("Sample consists of 1 sq. km grid cells within land use regimes in Cambodia. Cluster by road and year.")
 
 reghdfe ndvi_mean ma_minutes_2008roadsonly, cluster(ld_id year) absorb(year)
 outreg2 using "$results/ndvimodels_traveltime.doc", append noni nocons addtext("Climate Controls", N, "Year FEs", Y, "Grid cell FEs", N)
@@ -515,8 +510,16 @@ outreg2 using "$results/ndvimodels_traveltime.doc", append noni nocons addtext("
 
 rm "$results/ndvimodels_traveltime.txt"
 
+***
+
+su ndvi_mean if missing(mrb_dist)
+gen tenkmfromtreatment_dummy = missing(mrb_dist)
+
+reghdfe ndvi_mean ma_minutes_2008roadsonly c.ma_minutes_2008roadsonly##c.(active_concession active_protectedarea plantation_dummy)#i.tenkmfromtreatment_dummy, cluster(ld_id year) absorb(year id)
+outreg2 using "$results/ndvimodels_traveltime2.doc", replace noni nocons
 
 
+rm "$results/ndvimodels_traveltime2.txt"
 
 
 
