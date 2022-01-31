@@ -5,8 +5,10 @@
 *** DATA PROCESSING ***
 
 * set data and results paths
-global data "/home/cb8007/cambodia_roads/data"
-global results "/home/cb8007/cambodia_roads/results"
+*global data "/home/cb8007/cambodia_roads/data"
+*global results "/home/cb8007/cambodia_roads/results"
+global data "/Users/christianbaehr/Box/cambodia_roads/data"
+global results "/Users/christianbaehr/Box/cambodia_roads/results"
 
 *ssc install grstyle
 *scheme s2color

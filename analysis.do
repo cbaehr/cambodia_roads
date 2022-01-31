@@ -6,8 +6,14 @@
 *global data "/Users/christianbaehr/Box Sync/cambodia_roads/data"
 *global results "/Users/christianbaehr/Box Sync/cambodia_roads/results"
 
-global data "/home/cb8007/cambodia_roads/data"
-global results "/home/cb8007/cambodia_roads/results"
+*global data "/home/cb8007/cambodia_roads/data"
+*global results "/home/cb8007/cambodia_roads/results"
+
+*global data "/Users/christianbaehr/Box/cambodia_roads/data"
+*global results "/Users/christianbaehr/Box/cambodia_roads/results"
+
+global data "/Users/christianbaehr/Downloads/cambodia_roads/data"
+global results "/Users/christianbaehr/Downloads/cambodia_roads/results"
 
 *ssc install grstyle
 *scheme s2color
@@ -208,7 +214,8 @@ rm "$results/mainmodels_VCFnontreeveg.txt"
 * only include cells with >=10% baseline hansen
 * cluster by road project id and year
 * base level is 24 (6 years prior to treatment, construction start year)
-reghdfe ndvi_mean ib24.time_to_treatment i.year if (cond1), cluster(project_id year) absorb(id )
+*reghdfe ndvi_mean ib24.time_to_treatment i.year if (cond1), cluster(project_id year) absorb(id )
+reghdfe ndvi_mean ib26.time_to_treatment i.year if (cond1), cluster(project_id year) absorb(id )
 est sto t1
 * save regression results to csv
 esttab t1 using "$results/temp.csv", replace plain wide noobs cells((b ci_l ci_u))
@@ -221,18 +228,18 @@ keep if a=="time_to_treatment"
 gen c=substr(v1, 1, 2)
 destring c, replace
 keep if c>=20 & c<=36
-drop if v1=="24.time_to_treatment"
+drop if v1=="26.time_to_treatment"
 expand 2 if _n==1
-replace v1="24.time_to_treatment" if _n==_N
+replace v1="26.time_to_treatment" if _n==_N
 replace b=0 if _n==_N
-sum min95 if v1=="23.time_to_treatment" | v1=="25.time_to_treatment"
+sum min95 if v1=="25.time_to_treatment" | v1=="27.time_to_treatment"
 replace min95 = r(mean) if _n==_N
-sum max95 if v1=="23.time_to_treatment" | v1=="25.time_to_treatment"
+sum max95 if v1=="25.time_to_treatment" | v1=="27.time_to_treatment"
 replace max95 = r(mean) if _n==_N
 sort v1
-gen v2 = _n - 5
+gen v2 = _n - 7
 
-twoway (line b v2) (line min95 v2, lpattern(dash) lcolor(navy)) (line max95 v2, lpattern(dash) lcolor(navy)), graphregion(color(white)) bgcolor(white) legend(off) xlab(-4(1)12) xline(0 6, lpattern(dot)) text(-0.1 0 "Construction start" -0.1 6 "Road completion", size(vsmall) placement(east) color(cranberry)) title("Event study - NDVI") xtitle("Road completion schedule") ytitle("Treatment effects on NDVI") saving("$results/eventstudy_ndvi", replace)
+twoway (line b v2) (line min95 v2, lpattern(dash) lcolor(navy)) (line max95 v2, lpattern(dash) lcolor(navy)), graphregion(color(white)) bgcolor(white) legend(off) xlab(-6(1)10) xline(0 4, lpattern(dot)) text(-0.0975 0 "Construction start" -0.0975 4 "Road completion", size(vsmall) placement(east) color(cranberry)) title("Event study - NDVI") xtitle("Road completion schedule") ytitle("Treatment effects on NDVI") saving("$results/eventstudy_ndvi", replace)
 *xline(-3, lwidth(48) lc(gs12)) 
 
 restore
@@ -241,7 +248,7 @@ restore
 
 * main event study model - Hansen otucome
 
-reghdfe hansen_mean ib24.time_to_treatment i.year if cond1, cluster(project_id year) absorb(id )
+reghdfe hansen_mean ib26.time_to_treatment i.year if cond1, cluster(project_id year) absorb(id )
 est sto t2
 esttab t2 using "$results/temp.csv", replace plain wide noobs cells((b ci_l ci_u))
 
@@ -252,18 +259,18 @@ keep if a=="time_to_treatment"
 gen c=substr(v1, 1, 2)
 destring c, replace
 keep if c>=20 & c<=36
-drop if v1=="24.time_to_treatment"
+drop if v1=="26.time_to_treatment"
 expand 2 if _n==1
-replace v1="24.time_to_treatment" if _n==_N
+replace v1="26.time_to_treatment" if _n==_N
 replace b=0 if _n==_N
-sum min95 if v1=="23.time_to_treatment" | v1=="25.time_to_treatment"
+sum min95 if v1=="25.time_to_treatment" | v1=="27.time_to_treatment"
 replace min95 = r(mean) if _n==_N
-sum max95 if v1=="23.time_to_treatment" | v1=="25.time_to_treatment"
+sum max95 if v1=="25.time_to_treatment" | v1=="27.time_to_treatment"
 replace max95 = r(mean) if _n==_N
 sort v1
-gen v2 = _n - 5
+gen v2 = _n - 7
 
-twoway (line b v2) (line min95 v2, lpattern(dash) lcolor(navy)) (line max95 v2, lpattern(dash) lcolor(navy)), graphregion(color(white)) bgcolor(white) legend(off) xlab(-4(1)12) xline(0 6, lpattern(dot)) text(-0.15 0 "Construction start" -0.15 6 "Road completion", size(vsmall) placement(east) color(cranberry)) title("Event study - Hansen tree cover") xtitle("Road completion schedule") ytitle("Treatment effects on Hansen TC") saving("$results/eventstudy_hansen", replace)
+twoway (line b v2) (line min95 v2, lpattern(dash) lcolor(navy)) (line max95 v2, lpattern(dash) lcolor(navy)), graphregion(color(white)) bgcolor(white) legend(off) xlab(-6(1)10) xline(0 4, lpattern(dot)) text(-0.21 0 "Construction start" -0.21 4 "Road completion", size(vsmall) placement(east) color(cranberry)) title("Event study - Hansen tree cover") xtitle("Road completion schedule") ytitle("Treatment effects on Hansen TC") saving("$results/eventstudy_hansen", replace)
 
 restore
 
@@ -272,7 +279,7 @@ restore
 * main event study model - Vcf treecover otucome
 
 * only include cells with >=10% baseline hansen AND vcf treecover percent change from previous year is <200%
-reghdfe vcf_treecover_mean i.time_to_treatment i.year if (cond1), cluster(project_id year) absorb(id )
+reghdfe vcf_treecover_mean ib26.time_to_treatment i.year if (cond1), cluster(project_id year) absorb(id )
 est sto t3
 esttab t3 using "$results/temp.csv", replace plain wide noobs cells((b ci_l ci_u))
 
@@ -283,19 +290,18 @@ keep if a=="time_to_treatment"
 gen c=substr(v1, 1, 2)
 destring c, replace
 keep if c>=20 & c<=36
-drop if v1=="24.time_to_treatment"
+drop if v1=="26.time_to_treatment"
 expand 2 if _n==1
-replace v1="24.time_to_treatment" if _n==_N
+replace v1="26.time_to_treatment" if _n==_N
 replace b=0 if _n==_N
-sum min95 if v1=="23.time_to_treatment" | v1=="25.time_to_treatment"
+sum min95 if v1=="25.time_to_treatment" | v1=="27.time_to_treatment"
 replace min95 = r(mean) if _n==_N
-sum max95 if v1=="23.time_to_treatment" | v1=="25.time_to_treatment"
+sum max95 if v1=="25.time_to_treatment" | v1=="27.time_to_treatment"
 replace max95 = r(mean) if _n==_N
 sort v1
-gen v2 = _n - 5
+gen v2 = _n - 7
 
-twoway (line b v2) (line min95 v2, lpattern(dash) lcolor(navy)) (line max95 v2, lpattern(dash) lcolor(navy)), graphregion(color(white)) bgcolor(white) legend(off) xlab(-4(1)12) xline(0 6, lpattern(dot)) text(-0.1 0 "Construction start" -0.1 6 "Road completion", size(vsmall) placement(east) color(cranberry)) title("Event study - VCF tree cover") xtitle("Road completion schedule") ytitle("Treatment effects on VCF TC") 
-*saving("$results/eventstudy_VCFtreecover", replace)
+twoway (line b v2) (line min95 v2, lpattern(dash) lcolor(navy)) (line max95 v2, lpattern(dash) lcolor(navy)), graphregion(color(white)) bgcolor(white) legend(off) xlab(-6(1)10) xline(0 4, lpattern(dot)) text(-0.11 0 "Construction start" -0.11 4 "Road completion", size(vsmall) placement(east) color(cranberry)) title("Event study - VCF tree cover") xtitle("Road completion schedule") ytitle("Treatment effects on VCF TC") saving("$results/eventstudy_VCFtreecover", replace)
 
 restore
 
@@ -940,7 +946,7 @@ rm "$results/mainmodels_VCFtreecover_constructiontreatment.txt"
 
 * event study model - Hansen otucome - plantations only
 
-reghdfe hansen_mean ib24.time_to_treatment i.year if cond1 & plantation_dummy==1, cluster(project_id year) absorb(id )
+reghdfe hansen_mean ib26.time_to_treatment i.year if cond1 & plantation_dummy==1, cluster(project_id year) absorb(id )
 est sto t2_plantation
 esttab t2_plantation using "$results/temp.csv", replace plain wide noobs cells((b ci_l ci_u))
 
@@ -951,24 +957,24 @@ keep if a=="time_to_treatment"
 gen c=substr(v1, 1, 2)
 destring c, replace
 keep if c>=20 & c<=36
-drop if v1=="24.time_to_treatment"
+drop if v1=="26.time_to_treatment"
 expand 2 if _n==1
-replace v1="24.time_to_treatment" if _n==_N
+replace v1="26.time_to_treatment" if _n==_N
 replace b=0 if _n==_N
-sum min95 if v1=="23.time_to_treatment" | v1=="25.time_to_treatment"
+sum min95 if v1=="25.time_to_treatment" | v1=="27.time_to_treatment"
 replace min95 = r(mean) if _n==_N
-sum max95 if v1=="23.time_to_treatment" | v1=="25.time_to_treatment"
+sum max95 if v1=="25.time_to_treatment" | v1=="27.time_to_treatment"
 replace max95 = r(mean) if _n==_N
 sort v1
-gen v2 = _n - 5
+gen v2 = _n - 7
 
-twoway (line b v2) (line min95 v2, lpattern(dash) lcolor(navy)) (line max95 v2, lpattern(dash) lcolor(navy)), graphregion(color(white)) bgcolor(white) legend(off) xlab(-4(1)12) xline(0 6, lpattern(dot)) text(-0.59 0 "Construction start" -0.59 6 "Road completion", size(vsmall) placement(east) color(cranberry)) title("Event study - Hansen tree cover (plantation)") xtitle("Road completion schedule") ytitle("Treatment effects on Hansen TC") saving("$results/eventstudy_hansen_plantation", replace)
+twoway (line b v2) (line min95 v2, lpattern(dash) lcolor(navy)) (line max95 v2, lpattern(dash) lcolor(navy)), graphregion(color(white)) bgcolor(white) legend(off) xlab(-6(1)10) xline(0 4, lpattern(dot)) text(-0.58 0 "Construction start" -0.58 4 "Road completion", size(vsmall) placement(east) color(cranberry)) title("Event study - Hansen tree cover (plantation)") xtitle("Road completion schedule") ytitle("Treatment effects on Hansen TC") saving("$results/eventstudy_hansen_plantation", replace)
 
 restore
 
 ***
 
-reghdfe hansen_mean ib24.time_to_treatment i.year if cond1 & concession_dummy==1, cluster(project_id year) absorb(id )
+reghdfe hansen_mean ib26.time_to_treatment i.year if cond1 & concession_dummy==1, cluster(project_id year) absorb(id )
 est sto t2_concession
 esttab t2_concession using "$results/temp.csv", replace plain wide noobs cells((b ci_l ci_u))
 
@@ -979,24 +985,24 @@ keep if a=="time_to_treatment"
 gen c=substr(v1, 1, 2)
 destring c, replace
 keep if c>=20 & c<=36
-drop if v1=="24.time_to_treatment"
+drop if v1=="26.time_to_treatment"
 expand 2 if _n==1
-replace v1="24.time_to_treatment" if _n==_N
+replace v1="26.time_to_treatment" if _n==_N
 replace b=0 if _n==_N
-sum min95 if v1=="23.time_to_treatment" | v1=="25.time_to_treatment"
+sum min95 if v1=="25.time_to_treatment" | v1=="27.time_to_treatment"
 replace min95 = r(mean) if _n==_N
-sum max95 if v1=="23.time_to_treatment" | v1=="25.time_to_treatment"
+sum max95 if v1=="25.time_to_treatment" | v1=="27.time_to_treatment"
 replace max95 = r(mean) if _n==_N
 sort v1
-gen v2 = _n - 5
+gen v2 = _n - 7
 
-twoway (line b v2) (line min95 v2, lpattern(dash) lcolor(navy)) (line max95 v2, lpattern(dash) lcolor(navy)), graphregion(color(white)) bgcolor(white) legend(off) xlab(-4(1)12) xline(0 6, lpattern(dot)) text(-0.29 0 "Construction start" -0.29 6 "Road completion", size(vsmall) placement(east) color(cranberry)) title("Event study - Hansen tree cover (concession)") xtitle("Road completion schedule") ytitle("Treatment effects on Hansen TC") saving("$results/eventstudy_hansen_concession", replace)
+twoway (line b v2) (line min95 v2, lpattern(dash) lcolor(navy)) (line max95 v2, lpattern(dash) lcolor(navy)), graphregion(color(white)) bgcolor(white) legend(off) xlab(-6(1)10) yscale(range(-0.6 0.2)) ylab(-0.6(0.2)0.2) xline(0 4, lpattern(dot)) text(-0.58 0 "Construction start" -0.58 4 "Road completion", size(vsmall) placement(east) color(cranberry)) title("Event study - Hansen tree cover (concession)") xtitle("Road completion schedule") ytitle("Treatment effects on Hansen TC") saving("$results/eventstudy_hansen_concession", replace)
 
 restore
 
 ***
 
-reghdfe hansen_mean ib24.time_to_treatment i.year if cond1 & protectedarea_dummy==1, cluster(project_id year) absorb(id )
+reghdfe hansen_mean ib26.time_to_treatment i.year if cond1 & protectedarea_dummy==1, cluster(project_id year) absorb(id )
 est sto t2_protectedarea
 esttab t2_protectedarea using "$results/temp.csv", replace plain wide noobs cells((b ci_l ci_u))
 
@@ -1007,17 +1013,17 @@ keep if a=="time_to_treatment"
 gen c=substr(v1, 1, 2)
 destring c, replace
 keep if c>=20 & c<=36
-drop if v1=="24.time_to_treatment"
+drop if v1=="26.time_to_treatment"
 expand 2 if _n==1
-replace v1="24.time_to_treatment" if _n==_N
+replace v1="26.time_to_treatment" if _n==_N
 replace b=0 if _n==_N
-sum min95 if v1=="23.time_to_treatment" | v1=="25.time_to_treatment"
+sum min95 if v1=="25.time_to_treatment" | v1=="27.time_to_treatment"
 replace min95 = r(mean) if _n==_N
-sum max95 if v1=="23.time_to_treatment" | v1=="25.time_to_treatment"
+sum max95 if v1=="25.time_to_treatment" | v1=="27.time_to_treatment"
 replace max95 = r(mean) if _n==_N
 sort v1
-gen v2 = _n - 5
+gen v2 = _n - 7
 
-twoway (line b v2) (line min95 v2, lpattern(dash) lcolor(navy)) (line max95 v2, lpattern(dash) lcolor(navy)), graphregion(color(white)) bgcolor(white) legend(off) xlab(-4(1)12) xline(0 6, lpattern(dot)) text(-0.59 0 "Construction start" -0.59 6 "Road completion", size(vsmall) placement(east) color(cranberry)) title("Event study - Hansen tree cover (protected area)") xtitle("Road completion schedule") ytitle("Treatment effects on Hansen TC") saving("$results/eventstudy_hansen_protectedarea", replace)
+twoway (line b v2) (line min95 v2, lpattern(dash) lcolor(navy)) (line max95 v2, lpattern(dash) lcolor(navy)), graphregion(color(white)) bgcolor(white) legend(off) xlab(-6(1)10) yscale(range(-0.6 0.2)) ylab(-0.6(0.2)0.2) xline(0 4, lpattern(dot)) text(-0.58 0 "Construction start" -0.58 4 "Road completion", size(vsmall) placement(east) color(cranberry)) title("Event study - Hansen tree cover (protected area)") xtitle("Road completion schedule") ytitle("Treatment effects on Hansen TC") saving("$results/eventstudy_hansen_protectedarea", replace)
 
 restore
