@@ -1,6 +1,5 @@
 
-chunks=5
-chunks_create=False
+chunks=10
 
 base = "/Users/christianbaehr/Downloads/cambodia_roads_inputs_REVISE/data"
 
@@ -8,20 +7,11 @@ import os
 import geopandas as gpd
 import numpy as np
 
-## BREAK THE DATA INTO CHUNKS IF NEED BE
-if chunks_create:
-	from_pts=os.path.join(base, "empty_grid_trimmed_points_32648.geojson")
-	inp = gpd.read_file(from_pts)
-	inp_split = np.array_split(inp, chunks)
-	for i in range(1, chunks):
-		out_path = os.path.join(base, "market_access/empty_grid_trimmed_points_32648_{}.geojson".format(i))
-		outdat = inp_split[i]
-		outdat.to_file(out_path, driver="GeoJSON")
-
-out=os.path.join(base, "market_access/market_points_2000_32648.geojson")
+out=os.path.join(base, "market_access/market_points_2000_32648_majorONLY.geojson")
 
 #for i in range(2008,2021):
-for i in range(2019, 2021):
+for i in [2010, 2015, 2020]:
+#for i in range(2019, 2021):
 	print(i)
 	###
 	#inp=os.path.join(base, "market_access/road_network_{}_32648.geojson".format(i))
@@ -31,8 +21,7 @@ for i in range(2019, 2021):
 	###
 	#out=os.path.join(base, "market_access/market_points_{}_32648.geojson".format(i))
 	#network=os.path.join(base, "market_access/cambodia_highway_trimmed_32648.geojson")
-	#for j in range(chunks):
-	for j in range(1, chunks):
+	for j in range(0, chunks):
 		#inp=os.path.join(base, "market_access/road_network_{}_32648.geojson".format(i))
 		#inter=os.path.join(base, "market_access/market_lines_2000_32648.geojson")
 		#processing.run("native:lineintersections", {'INPUT':inp,'INTERSECT':inter,'INPUT_FIELDS':[],'INTERSECT_FIELDS':[],'OUTPUT':out})
@@ -40,7 +29,7 @@ for i in range(2019, 2021):
 		#network=os.path.join(base, "market_access/cambodia_highway_trimmed_32648.geojson")
 		network=os.path.join(base, "market_access/road_network_{}_32648_REVISE_C.geojson".format(i))
 		###
-		from_pts=os.path.join(base, "market_access/empty_grid_trimmed_points_32648_{}.geojson".format(j))
+		from_pts=os.path.join(base, "market_access/empty_grid_trimmed_points_32648_{}_REVISE.geojson".format(j))
 		#from_pts=os.path.join(base, "market_access/empty_grid_trimmed_points_32648_REVISE.geojson")
 		#from_pts=os.path.join(base, "empty_grid_trimmed_points_32648.geojson".format(j))
 		#from_pts=os.path.join(base, "empty_grid_trimmed_points_32648_sample.geojson")
