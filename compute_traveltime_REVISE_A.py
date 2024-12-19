@@ -22,7 +22,7 @@ if chunks_create:
 out=os.path.join(base, "market_access/market_points_2000_32648_majorONLY.geojson")
 
 #for i in [2010, 2015, 2020]:
-for i in [2020]:
+for i in range(2010, 2021):
 #for i in range(2008,2021):
 	print(i)
 	###
@@ -33,8 +33,8 @@ for i in [2020]:
 	###
 	#out=os.path.join(base, "market_access/market_points_{}_32648.geojson".format(i))
 	#network=os.path.join(base, "market_access/cambodia_highway_trimmed_32648.geojson")
-	#for j in range(chunks):
 	for j in range(0, chunks):
+	#for j in range(0, chunks):
 		#inp=os.path.join(base, "market_access/road_network_{}_32648.geojson".format(i))
 		#inter=os.path.join(base, "market_access/market_lines_2000_32648.geojson")
 		#processing.run("native:lineintersections", {'INPUT':inp,'INTERSECT':inter,'INPUT_FIELDS':[],'INTERSECT_FIELDS':[],'OUTPUT':out})

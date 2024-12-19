@@ -49,7 +49,7 @@ for i in range(2008, 2021):
 	network_i["merging_id"] = network_i["unique_id"].astype(str) + network_i["speed_limit"].astype(str)
 	network_i["speed_limit"] = network_i["speed_limit"] * 1.5
 	network_i=network_i.dissolve("merging_id")
-	network_out=os.path.join(base, "market_access/road_network_{}_32648_REVISE_C.geojson".format(str(i)))
+	network_out=os.path.join(base, "market_access/road_network_{}_32648_REVISE_B.geojson".format(str(i)))
 	network_i.set_crs("EPSG:32648").to_file(network_out, driver="GeoJSON")
 
 ##################################################
@@ -88,7 +88,7 @@ for i in range(2008, 2021):
 	network_i["merging_id"] = network_i["unique_id"].astype(str) + network_i["speed_limit"].astype(str)
 	network_i["speed_limit"] = network_i["speed_limit"] * 1.5
 	network_i=network_i.dissolve("merging_id")
-	network_out=os.path.join(base, "market_access/road_network_{}_32648_2008roadsonly_REVISE_C.geojson".format(str(i)))
+	network_out=os.path.join(base, "market_access/road_network_{}_32648_2008roadsonly_REVISE_B.geojson".format(str(i)))
 	network_i.set_crs("EPSG:32648").to_file(network_out, driver="GeoJSON")
 
 

@@ -9,9 +9,9 @@ import numpy as np
 
 out=os.path.join(base, "market_access/market_points_2000_32648_majorONLY.geojson")
 
-#for i in range(2008,2021):
-for i in [2010, 2015, 2020]:
-#for i in range(2019, 2021):
+#for i in [2017]:
+for i in range(2018, 2021):
+#for i in range(2008, 2021):
 	print(i)
 	###
 	#inp=os.path.join(base, "market_access/road_network_{}_32648.geojson".format(i))
@@ -21,13 +21,14 @@ for i in [2010, 2015, 2020]:
 	###
 	#out=os.path.join(base, "market_access/market_points_{}_32648.geojson".format(i))
 	#network=os.path.join(base, "market_access/cambodia_highway_trimmed_32648.geojson")
+	#for j in [9]:
 	for j in range(0, chunks):
 		#inp=os.path.join(base, "market_access/road_network_{}_32648.geojson".format(i))
 		#inter=os.path.join(base, "market_access/market_lines_2000_32648.geojson")
 		#processing.run("native:lineintersections", {'INPUT':inp,'INTERSECT':inter,'INPUT_FIELDS':[],'INTERSECT_FIELDS':[],'OUTPUT':out})
 		###
 		#network=os.path.join(base, "market_access/cambodia_highway_trimmed_32648.geojson")
-		network=os.path.join(base, "market_access/road_network_{}_32648_REVISE_C.geojson".format(i))
+		network=os.path.join(base, "market_access/road_network_{}_32648.geojson".format(i))
 		###
 		from_pts=os.path.join(base, "market_access/empty_grid_trimmed_points_32648_{}_REVISE.geojson".format(j))
 		#from_pts=os.path.join(base, "market_access/empty_grid_trimmed_points_32648_REVISE.geojson")
@@ -36,8 +37,8 @@ for i in [2010, 2015, 2020]:
 		to_pts=out
 		out_tt = os.path.join(base, "market_access/market_access_{}_REVISE_C.geojson".format(i))
 		#processing.run("qneat3:OdMatrixFromLayersAsLines", {'INPUT':network,'FROM_POINT_LAYER':from_pts,'FROM_ID_FIELD':'id','TO_POINT_LAYER':to_pts,'TO_ID_FIELD':'NAME','STRATEGY':1,'ENTRY_COST_CALCULATION_METHOD':1,'DIRECTION_FIELD':None,'VALUE_FORWARD':'','VALUE_BACKWARD':'','VALUE_BOTH':'','DEFAULT_DIRECTION':2,'SPEED_FIELD':'speed_limit','DEFAULT_SPEED':20,'TOLERANCE':0.01,'OUTPUT':out_tt})
-		### INCREASING DEFAULT SPEED TO 40KM FOR PANEL B!!!
-		processing.run("qneat3:OdMatrixFromLayersAsLines", {'INPUT':network,'FROM_POINT_LAYER':from_pts,'FROM_ID_FIELD':'id','TO_POINT_LAYER':to_pts,'TO_ID_FIELD':'NAME','STRATEGY':1,'ENTRY_COST_CALCULATION_METHOD':1,'DIRECTION_FIELD':None,'VALUE_FORWARD':'','VALUE_BACKWARD':'','VALUE_BOTH':'','DEFAULT_DIRECTION':2,'SPEED_FIELD':'speed_limit','DEFAULT_SPEED':40,'TOLERANCE':0.01,'OUTPUT':out_tt})
+		### INCREASING DEFAULT SPEED TO 30KM FOR PANEL C!!!
+		processing.run("qneat3:OdMatrixFromLayersAsLines", {'INPUT':network,'FROM_POINT_LAYER':from_pts,'FROM_ID_FIELD':'id','TO_POINT_LAYER':to_pts,'TO_ID_FIELD':'NAME','STRATEGY':1,'ENTRY_COST_CALCULATION_METHOD':1,'DIRECTION_FIELD':None,'VALUE_FORWARD':'','VALUE_BACKWARD':'','VALUE_BOTH':'','DEFAULT_DIRECTION':2,'SPEED_FIELD':'speed_limit','DEFAULT_SPEED':30,'TOLERANCE':0.01,'OUTPUT':out_tt})
 		###
 		inp=out_tt
 		out_path=os.path.join(base, "market_access/market_access_{}_trimmed_{}_REVISE_C.geojson".format(i, j))
